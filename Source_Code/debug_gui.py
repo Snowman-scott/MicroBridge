@@ -1,12 +1,16 @@
-# MicroBridge\Source_Code\ndp_convertor_gui.py
-# Simplified functional GUI for converting Hamamatsu NDP (.ndpa) and CSV annotations
-# - Supports Auto / NDPA / CSV input selection
-# - Select files / select folder, choose output folder
-# - Thread-safe realtime logging using queue polled by the main thread
-# - Background conversion thread (doesn't block the UI)
-#
-# Usage:
-#   python MicroBridge\Source_Code\ndp_convertor_gui.py
+#!/usr/bin/env python3
+"""
+MicroBridge - debug_gui.py
+
+Thread-safe GUI for converting Hamamatsu NDP (.ndpa) and CSV annotations into a
+simplified LMD-compatible XML. This file is a cleaned implementation that:
+
+- Uses a background worker thread for conversions.
+- Uses a queue.Queue for thread-safe log/progress messages.
+- Safely extracts text from minidom elements (avoids AttributeError).
+- Writes outputs to a selected output folder or the input file's folder.
+- Fixes a progress/idx bug and ensures the convert button is re-enabled on the main thread.
+"""
 
 import csv
 import os
@@ -16,13 +20,14 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, scrolledtext, ttk
 from xml.dom import minidom
 
-# ---- Config ----
+# Configuration
 WINDOW_TITLE = "MicroBridge - NDP/CSV to LMD Converter"
 DEFAULT_OUTPUT_EXT = ".xml"
+QUEUE_POLL_MS = 100
 
 
 class MicroBridgeConverterApp:
-    def __init__(self, root):
+    def __init__(self, root: tk.Tk):
         self.root = root
         self.root.title(WINDOW_TITLE)
         self.root.geometry("1000x700")
@@ -41,7 +46,7 @@ class MicroBridgeConverterApp:
         self._build_ui()
 
         # Start polling queue for log/progress updates
-        self.root.after(100, self._process_queue)
+        self.root.after(QUEUE_POLL_MS, self._process_queue)
 
     # ---------------- UI ----------------
     def _build_ui(self):
@@ -184,7 +189,7 @@ class MicroBridgeConverterApp:
                 found.append(os.path.join(folder, entry))
         if not found:
             messagebox.showwarning(
-                "No files", f"No {', '.join(exts)} files found in folder"
+                "No files", "No {} files found in folder".format(", ".join(exts))
             )
             return
         added = 0
@@ -193,14 +198,14 @@ class MicroBridgeConverterApp:
                 self.input_files.append(p)
                 added += 1
         self._refresh_file_list()
-        self._enqueue_log(f"✓ Added {added} file(s) from folder")
+        self._enqueue_log("✓ Added {} file(s) from folder".format(added))
 
     def select_output_folder(self):
         folder = filedialog.askdirectory(title="Select output folder")
         if folder:
             self.output_folder.set(folder)
             self.output_folder_label.config(text=folder)
-            self._enqueue_log(f"✓ Output folder set to: {folder}")
+            self._enqueue_log("✓ Output folder set to: {}".format(folder))
 
     def clear_files(self):
         self.input_files.clear()
@@ -213,18 +218,25 @@ class MicroBridgeConverterApp:
             self.file_listbox.insert(tk.END, os.path.basename(p))
 
     # ---------------- queue/log helpers ----------------
-    def _enqueue_log(self, message):
+    def _enqueue_log(self, message: str):
         self.queue.put(("log", message))
 
-    def _enqueue_progress(self, value):
+    def _enqueue_progress(self, value: int):
         self.queue.put(("progress", value))
 
-    def _enqueue_progress_text(self, text):
+    def _enqueue_progress_text(self, text: str):
         self.queue.put(("progress_text", text))
+
+    def _enqueue_done(self, successful: int, total: int):
+        self.queue.put(("done", successful, total))
+
+    def _enqueue_enable_button(self):
+        # This kind of item instructs the main thread to enable UI elements
+        self.queue.put(("enable_button",))
 
     def _process_queue(self):
         try:
-            while not self.queue.empty():
+            while True:
                 item = self.queue.get_nowait()
                 if not item:
                     continue
@@ -249,13 +261,23 @@ class MicroBridgeConverterApp:
                     _, successful, total = item
                     messagebox.showinfo(
                         "Complete",
-                        f"Successfully converted {successful} out of {total} files",
+                        "Successfully converted {} out of {} files".format(
+                            successful, total
+                        ),
                     )
+                elif kind == "enable_button":
+                    try:
+                        self.convert_btn.config(state=tk.NORMAL)
+                    except Exception:
+                        pass
+        except queue.Empty:
+            # no more items
+            pass
         except Exception:
             # don't crash mainloop for queue errors
             pass
         finally:
-            self.root.after(100, self._process_queue)
+            self.root.after(QUEUE_POLL_MS, self._process_queue)
 
     # ---------------- conversion control ----------------
     def start_conversion(self):
@@ -276,38 +298,50 @@ class MicroBridgeConverterApp:
         self._enqueue_log("\n" + "=" * 60)
         self._enqueue_log("🚀 Starting batch conversion...")
         self._enqueue_log("=" * 60)
+
+        # iterate over a shallow copy so modifications to self.input_files won't break loop
         for idx, path in enumerate(list(self.input_files)):
             base = os.path.basename(path)
-            self._enqueue_progress_text(f"Converting {idx + 1}/{total}: {base}")
-            self._enqueue_log(f"\n[{idx + 1}/{total}] Processing: {base}")
+            self._enqueue_progress_text(
+                "Converting {}/{}: {}".format(idx + 1, total, base)
+            )
+            self._enqueue_log("\n[{} / {}] Processing: {}".format(idx + 1, total, base))
+
             try:
-                # determine file type
                 fmt = self.input_format.get()
-                if fmt == "ndpa" or (fmt == "auto" and path.lower().endswith(".ndpa")):
+                lower = path.lower()
+                if fmt == "ndpa" or (fmt == "auto" and lower.endswith(".ndpa")):
                     ok = self.convert_ndpa_file(path)
-                elif fmt == "csv" or (fmt == "auto" and path.lower().endswith(".csv")):
+                elif fmt == "csv" or (fmt == "auto" and lower.endswith(".csv")):
                     ok = self.convert_csv_file(path)
-                elif fmt == "auto":
-                    # if unknown extension, fail
-                    self._enqueue_log("  ✗ Unknown file type (auto) — skipping")
-                    ok = False
                 else:
+                    # unknown extension
                     self._enqueue_log("  ✗ Unknown file type — skipping")
                     ok = False
             except Exception as e:
                 ok = False
-                self._enqueue_log(f"  ✗ ERROR (exception): {e}")
+                self._enqueue_log("  ✗ ERROR (exception): {}".format(e))
+
             if ok:
                 successful += 1
+
+            # update progress (main thread will apply it)
             self._enqueue_progress(idx + 1)
+
+        # summary
         self._enqueue_log("\n" + "=" * 60)
         self._enqueue_log(
-            f"✓ Conversion complete: {successful}/{total} files successful"
+            "✓ Conversion complete: {}/{} files successful".format(successful, total)
         )
         self._enqueue_log("=" * 60)
-        self.queue.put(("done", successful, total))
-        # re-enable button on main thread (use queue to communicate)
-        self.convert_btn.config(state=tk.NORMAL)
+        self._enqueue_done(successful, total)
+
+        # re-enable button on main thread
+        try:
+            self.root.after(0, lambda: self.convert_btn.config(state=tk.NORMAL))
+        except Exception:
+            # fallback: instruct mainloop to enable button
+            self._enqueue_enable_button()
 
     # ---------------- XML helpers and conversion implementations ----------------
     def _get_element_text(self, elem):
@@ -322,29 +356,33 @@ class MicroBridgeConverterApp:
             return "0"
         return str(data).strip()
 
-    def convert_ndpa_file(self, input_path):
+    def convert_ndpa_file(self, input_path: str) -> bool:
         """
-        Parse NDPA (XML) and write simplified LMD-compatible XML.
-        First 3 regions -> calibration points.
-        Remaining regions -> shapes with points converted from nm->um (divide by 1000).
+        Parse NDPA XML and write simplified LMD-compatible XML.
+        - First 3 regions -> calibration points.
+        - Remaining regions -> shapes with points converted from nm -> um.
         """
         try:
             base = os.path.splitext(os.path.basename(input_path))[0]
             out_dir = self.output_folder.get() or os.path.dirname(input_path)
             os.makedirs(out_dir, exist_ok=True)
-            out_path = os.path.join(out_dir, f"{base}_LMD{self.output_extension.get()}")
+            out_path = os.path.join(
+                out_dir, "{}_LMD{}".format(base, self.output_extension.get())
+            )
 
             with open(input_path, "r", encoding="utf-8") as fh:
                 dom = minidom.parse(fh)
 
             regions = dom.getElementsByTagName("ndpviewstate")
-            self._enqueue_log(f"  Found {len(regions)} regions")
+            self._enqueue_log("  Found {} regions".format(len(regions)))
 
             if len(regions) < 3:
                 self._enqueue_log(
                     "  ✗ ERROR: Need at least 3 regions for calibration points!"
                 )
                 return False
+
+            self._enqueue_log("  DEBUG: Processing calibration points from regions 0-2")
 
             with open(out_path, "w", encoding="utf-8") as out:
                 out.write('<?xml version="1.0" encoding="utf-8"?>\n')
@@ -354,16 +392,34 @@ class MicroBridgeConverterApp:
                 # calibration points
                 for i in range(3):
                     region = regions[i]
+                    # Get title for debugging
+                    title_elem = region.getElementsByTagName("title")
+                    title = (
+                        self._get_element_text(title_elem[0])
+                        if title_elem
+                        else "Region_{}".format(i)
+                    )
+
                     pts = region.getElementsByTagName("point")
                     if not pts:
+                        self._enqueue_log(
+                            "  ⚠️ Calibration point {} ({}) has no points!".format(
+                                i + 1, title
+                            )
+                        )
                         # write zeros if missing
                         out.write(
-                            f"  <X_CalibrationPoint_{i + 1}>0</X_CalibrationPoint_{i + 1}>\n"
+                            "  <X_CalibrationPoint_{}>0</X_CalibrationPoint_{}>\n".format(
+                                i + 1, i + 1
+                            )
                         )
                         out.write(
-                            f"  <Y_CalibrationPoint_{i + 1}>0</Y_CalibrationPoint_{i + 1}>\n"
+                            "  <Y_CalibrationPoint_{}>0</Y_CalibrationPoint_{}>\n".format(
+                                i + 1, i + 1
+                            )
                         )
                         continue
+
                     p = pts[0]
                     x_elems = p.getElementsByTagName("x")
                     y_elems = p.getElementsByTagName("y")
@@ -375,24 +431,75 @@ class MicroBridgeConverterApp:
                     )
                     x_um = int(round(x_nm / 1000.0))
                     y_um = int(round(y_nm / 1000.0))
+
+                    self._enqueue_log(
+                        "  Calibration {} ({}): X={}, Y={} (from {} points)".format(
+                            i + 1, title, x_um, y_um, len(pts)
+                        )
+                    )
+
                     out.write(
-                        f"  <X_CalibrationPoint_{i + 1}>{x_um}</X_CalibrationPoint_{i + 1}>\n"
+                        "  <X_CalibrationPoint_{}>{}</X_CalibrationPoint_{}>\n".format(
+                            i + 1, x_um, i + 1
+                        )
                     )
                     out.write(
-                        f"  <Y_CalibrationPoint_{i + 1}>{y_um}</Y_CalibrationPoint_{i + 1}>\n"
+                        "  <Y_CalibrationPoint_{}>{}</Y_CalibrationPoint_{}>\n".format(
+                            i + 1, y_um, i + 1
+                        )
                     )
 
                 num_shapes = max(0, len(regions) - 3)
-                out.write(f"  <ShapeCount>{num_shapes}</ShapeCount>\n")
+                out.write("  <ShapeCount>{}</ShapeCount>\n".format(num_shapes))
+                self._enqueue_log(
+                    "  DEBUG: Processing {} shapes from regions 3-{}".format(
+                        num_shapes, len(regions) - 1
+                    )
+                )
 
                 # shapes
                 for si in range(3, len(regions)):
                     region = regions[si]
+                    shape_num = si - 2
+
+                    title_elem = region.getElementsByTagName("title")
+                    title = (
+                        self._get_element_text(title_elem[0])
+                        if title_elem
+                        else "Shape_{}".format(shape_num)
+                    )
+
                     pts = region.getElementsByTagName("point")
                     if not pts:
+                        self._enqueue_log(
+                            "  ⚠️ Shape {} ({}) has no points - skipping".format(
+                                shape_num, title
+                            )
+                        )
                         continue
-                    out.write(f"  <Shape_{si - 2}>\n")
-                    out.write(f"    <PointCount>{len(pts)}</PointCount>\n")
+
+                    out.write("  <Shape_{}>\n".format(shape_num))
+                    out.write("    <PointCount>{}</PointCount>\n".format(len(pts)))
+
+                    # DEBUG: Log first point of each shape
+                    if len(pts) > 0:
+                        first_pt = pts[0]
+                        x_elems = first_pt.getElementsByTagName("x")
+                        y_elems = first_pt.getElementsByTagName("y")
+                        first_x_nm = float(
+                            self._get_element_text(x_elems[0] if x_elems else None)
+                        )
+                        first_y_nm = float(
+                            self._get_element_text(y_elems[0] if y_elems else None)
+                        )
+                        first_x = int(round(first_x_nm / 1000.0))
+                        first_y = int(round(first_y_nm / 1000.0))
+                        self._enqueue_log(
+                            "  Shape {} ({}) : {} points, first=({}, {})".format(
+                                shape_num, title, len(pts), first_x, first_y
+                            )
+                        )
+
                     for pi, p in enumerate(pts):
                         x_elems = p.getElementsByTagName("x")
                         y_elems = p.getElementsByTagName("y")
@@ -404,19 +511,25 @@ class MicroBridgeConverterApp:
                         )
                         x_um = int(round(x_nm / 1000.0))
                         y_um = int(round(y_nm / 1000.0))
-                        out.write(f"    <X_{pi + 1}>{x_um}</X_{pi + 1}>\n")
-                        out.write(f"    <Y_{pi + 1}>{y_um}</Y_{pi + 1}>\n")
-                    out.write(f"  </Shape_{si - 2}>\n")
+                        out.write("    <X_{}>{}</X_{}>\n".format(pi + 1, x_um, pi + 1))
+                        out.write("    <Y_{}>{}</Y_{}>\n".format(pi + 1, y_um, pi + 1))
+                    out.write("  </Shape_{}>\n".format(shape_num))
 
                 out.write("</ImageData>\n")
 
-            self._enqueue_log(f"  ✓ Saved to: {os.path.basename(out_path)}")
+            self._enqueue_log("  ✓ Saved to: {}".format(os.path.basename(out_path)))
+            self._enqueue_log(
+                "  DEBUG: Conversion complete - check log for coordinate details"
+            )
             return True
         except Exception as e:
-            self._enqueue_log(f"  ✗ ERROR when converting NDPA: {e}")
+            import traceback
+
+            self._enqueue_log("  ✗ ERROR when converting NDPA: {}".format(e))
+            self._enqueue_log("  DEBUG: {}".format(traceback.format_exc()))
             return False
 
-    def convert_csv_file(self, input_path):
+    def convert_csv_file(self, input_path: str) -> bool:
         """
         Read a CSV where first row is header and subsequent rows include X (col 5) and Y (col 6).
         Use first 3 data rows as calibration points (in micrometers already).
@@ -426,13 +539,15 @@ class MicroBridgeConverterApp:
             base = os.path.splitext(os.path.basename(input_path))[0]
             out_dir = self.output_folder.get() or os.path.dirname(input_path)
             os.makedirs(out_dir, exist_ok=True)
-            out_path = os.path.join(out_dir, f"{base}_LMD{self.output_extension.get()}")
+            out_path = os.path.join(
+                out_dir, "{}_LMD{}".format(base, self.output_extension.get())
+            )
 
             with open(input_path, newline="", encoding="utf-8") as fh:
                 rdr = csv.reader(fh)
                 rows = [r for r in rdr if r]
 
-            self._enqueue_log(f"  Found {len(rows)} rows in CSV")
+            self._enqueue_log("  Found {} rows in CSV".format(len(rows)))
             if len(rows) < 4:
                 self._enqueue_log(
                     "  ✗ ERROR: Need at least 4 rows (header + 3 calibration points)"
@@ -465,20 +580,24 @@ class MicroBridgeConverterApp:
                         x_val = 0.0
                         y_val = 0.0
                     out.write(
-                        f"  <X_CalibrationPoint_{i + 1}>{int(round(x_val))}</X_CalibrationPoint_{i + 1}>\n"
+                        "  <X_CalibrationPoint_{}>{}</X_CalibrationPoint_{}>\n".format(
+                            i + 1, int(round(x_val)), i + 1
+                        )
                     )
                     out.write(
-                        f"  <Y_CalibrationPoint_{i + 1}>{int(round(y_val))}</Y_CalibrationPoint_{i + 1}>\n"
+                        "  <Y_CalibrationPoint_{}>{}</Y_CalibrationPoint_{}>\n".format(
+                            i + 1, int(round(y_val)), i + 1
+                        )
                     )
 
                 num_shapes = max(0, len(data) - 3)
-                out.write(f"  <ShapeCount>{num_shapes}</ShapeCount>\n")
+                out.write("  <ShapeCount>{}</ShapeCount>\n".format(num_shapes))
 
                 self._enqueue_log(
                     "  ⚠️ Note: CSV contains centroids only; polygons unavailable"
                 )
                 self._enqueue_log(
-                    f"  Creating single-point shapes for {num_shapes} regions"
+                    "  Creating single-point shapes for {} regions".format(num_shapes)
                 )
 
                 for si in range(3, len(data)):
@@ -490,21 +609,24 @@ class MicroBridgeConverterApp:
                         except Exception:
                             x_val = 0.0
                             y_val = 0.0
-                        out.write(f"  <Shape_{si - 2}>\n")
-                        out.write(f"    <PointCount>1</PointCount>\n")
-                        out.write(f"    <X_1>{int(round(x_val))}</X_1>\n")
-                        out.write(f"    <Y_1>{int(round(y_val))}</Y_1>\n")
-                        out.write(f"  </Shape_{si - 2}>\n")
+                    else:
+                        x_val = 0.0
+                        y_val = 0.0
+                    out.write("  <Shape_{}>\n".format(si - 2))
+                    out.write("    <PointCount>1</PointCount>\n")
+                    out.write("    <X_1>{}</X_1>\n".format(int(round(x_val))))
+                    out.write("    <Y_1>{}</Y_1>\n".format(int(round(y_val))))
+                    out.write("  </Shape_{}>\n".format(si - 2))
 
                 out.write("</ImageData>\n")
 
-            self._enqueue_log(f"  ✓ Saved to: {os.path.basename(out_path)}")
+            self._enqueue_log("  ✓ Saved to: {}".format(os.path.basename(out_path)))
             self._enqueue_log(
                 "  ⚠️ CSV export lacks polygon vertices - use NDPA format for full shape data"
             )
             return True
         except Exception as e:
-            self._enqueue_log(f"  ✗ ERROR when converting CSV: {e}")
+            self._enqueue_log("  ✗ ERROR when converting CSV: {}".format(e))
             return False
 
 
