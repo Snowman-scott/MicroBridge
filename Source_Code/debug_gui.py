@@ -359,7 +359,7 @@ class MicroBridgeConverterApp:
     def convert_ndpa_file(self, input_path: str) -> bool:
         """
         Parse NDPA XML and write simplified LMD-compatible XML.
-        - First 3 regions -> calibration points.
+        - First 3 regions -> calibration points (from circle annotations).
         - Remaining regions -> shapes with points converted from nm -> um.
         """
         try:
@@ -389,7 +389,7 @@ class MicroBridgeConverterApp:
                 out.write("<ImageData>\n")
                 out.write("  <GlobalCoordinates>1</GlobalCoordinates>\n")
 
-                # calibration points
+                # calibration points - extract from circle annotations
                 for i in range(3):
                     region = regions[i]
                     # Get title for debugging
@@ -400,10 +400,11 @@ class MicroBridgeConverterApp:
                         else "Region_{}".format(i)
                     )
 
-                    pts = region.getElementsByTagName("point")
-                    if not pts:
+                    # Look for annotation element (circles for reference points)
+                    annotations = region.getElementsByTagName("annotation")
+                    if not annotations:
                         self._enqueue_log(
-                            "  ⚠️ Calibration point {} ({}) has no points!".format(
+                            "  ⚠️ Calibration point {} ({}) has no annotation!".format(
                                 i + 1, title
                             )
                         )
@@ -420,21 +421,28 @@ class MicroBridgeConverterApp:
                         )
                         continue
 
-                    p = pts[0]
-                    x_elems = p.getElementsByTagName("x")
-                    y_elems = p.getElementsByTagName("y")
-                    x_nm = float(
-                        self._get_element_text(x_elems[0] if x_elems else None)
-                    )
-                    y_nm = float(
-                        self._get_element_text(y_elems[0] if y_elems else None)
-                    )
-                    x_um = int(round(x_nm / 1000.0))
-                    y_um = int(round(y_nm / 1000.0))
+                    annotation = annotations[0]
+                    # For circle annotations, x and y are direct children
+                    x_elems = annotation.getElementsByTagName("x")
+                    y_elems = annotation.getElementsByTagName("y")
+
+                    if not x_elems or not y_elems:
+                        self._enqueue_log(
+                            "  ⚠️ Calibration point {} ({}) missing x/y coordinates!".format(
+                                i + 1, title
+                            )
+                        )
+                        x_um = 0
+                        y_um = 0
+                    else:
+                        x_nm = float(self._get_element_text(x_elems[0]))
+                        y_nm = float(self._get_element_text(y_elems[0]))
+                        x_um = int(round(x_nm / 1000.0))
+                        y_um = int(round(y_nm / 1000.0))
 
                     self._enqueue_log(
-                        "  Calibration {} ({}): X={}, Y={} (from {} points)".format(
-                            i + 1, title, x_um, y_um, len(pts)
+                        "  Calibration {} ({}): X={}, Y={} (from circle annotation)".format(
+                            i + 1, title, x_um, y_um
                         )
                     )
 
@@ -457,7 +465,7 @@ class MicroBridgeConverterApp:
                     )
                 )
 
-                # shapes
+                # shapes - these use pointlists
                 for si in range(3, len(regions)):
                     region = regions[si]
                     shape_num = si - 2
@@ -469,7 +477,17 @@ class MicroBridgeConverterApp:
                         else "Shape_{}".format(shape_num)
                     )
 
-                    pts = region.getElementsByTagName("point")
+                    # For freehand shapes, look for pointlist > point
+                    pointlists = region.getElementsByTagName("pointlist")
+                    if not pointlists:
+                        self._enqueue_log(
+                            "  ⚠️ Shape {} ({}) has no pointlist - skipping".format(
+                                shape_num, title
+                            )
+                        )
+                        continue
+
+                    pts = pointlists[0].getElementsByTagName("point")
                     if not pts:
                         self._enqueue_log(
                             "  ⚠️ Shape {} ({}) has no points - skipping".format(
@@ -519,7 +537,7 @@ class MicroBridgeConverterApp:
 
             self._enqueue_log("  ✓ Saved to: {}".format(os.path.basename(out_path)))
             self._enqueue_log(
-                "  DEBUG: Conversion complete - check log for coordinate details"
+                "  DEBUG: Conversion complete - check calibration point coordinates"
             )
             return True
         except Exception as e:
