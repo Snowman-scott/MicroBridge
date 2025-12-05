@@ -36,7 +36,7 @@ class MicroBridgeConverterApp:
         # State
         self.input_files = []  # absolute paths
         self.input_format = tk.StringVar(value="auto")  # 'auto', 'ndpa', 'csv'
-        self.output_extension = tk.StringVar(value=DEFAULT_OUTPUT_EXT)
+        self.output_extension = ".xml"
         self.output_folder = tk.StringVar(value="")  # empty => use input file folder
 
         # Thread-safe queue for log/progress updates
@@ -66,16 +66,6 @@ class MicroBridgeConverterApp:
         tk.Radiobutton(
             format_frame, text="CSV (.csv)", variable=self.input_format, value="csv"
         ).pack(side=tk.LEFT)
-
-        # Output extension radios
-        outext_frame = tk.LabelFrame(top_frame, text="Output Ext", padx=8, pady=6)
-        outext_frame.pack(side=tk.LEFT, padx=(0, 8))
-        tk.Radiobutton(
-            outext_frame, text=".xml", variable=self.output_extension, value=".xml"
-        ).pack(side=tk.LEFT)
-        tk.Radiobutton(
-            outext_frame, text=".sld", variable=self.output_extension, value=".sld"
-        ).pack(side=tk.LEFT, padx=6)
 
         # File selection buttons
         btn_frame = tk.Frame(top_frame)
@@ -367,7 +357,7 @@ class MicroBridgeConverterApp:
             out_dir = self.output_folder.get() or os.path.dirname(input_path)
             os.makedirs(out_dir, exist_ok=True)
             out_path = os.path.join(
-                out_dir, "{}_LMD{}".format(base, self.output_extension.get())
+                out_dir, "{}_LMD{}".format(base, self.output_extension)
             )
 
             with open(input_path, "r", encoding="utf-8") as fh:
@@ -558,7 +548,7 @@ class MicroBridgeConverterApp:
             out_dir = self.output_folder.get() or os.path.dirname(input_path)
             os.makedirs(out_dir, exist_ok=True)
             out_path = os.path.join(
-                out_dir, "{}_LMD{}".format(base, self.output_extension.get())
+                out_dir, "{}_LMD{}".format(base, self.output_extension)
             )
 
             with open(input_path, newline="", encoding="utf-8") as fh:
