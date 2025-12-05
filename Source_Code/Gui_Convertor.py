@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-MicroBridge - debug_gui.py
+MicroBridge - Gui_Convertor.py
 
 Thread-safe GUI for converting Hamamatsu NDP (.ndpa) and CSV annotations into a
 simplified LMD-compatible XML. This file is a cleaned implementation that:
