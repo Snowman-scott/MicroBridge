@@ -139,6 +139,22 @@ class MicroBridgeConverterApp:
         )
         self.convert_btn.pack(fill=tk.X)
 
+        # Non-intrusive attribution label:
+        # Place the label using absolute placement so it does NOT affect the existing pack layout.
+        # This keeps the UI exactly where it was while adding a subtle attribution.
+        self.attribution_label = tk.Label(
+            self.root,
+            text="Made by Rose Scott - Snowman-scott on GitHub",
+            font=("Segoe UI", 8),
+            fg="#666666",
+        )
+        try:
+            # place at bottom-right corner with a small inset
+            self.attribution_label.place(relx=1.0, rely=1.0, anchor="se", x=-10, y=-10)
+        except Exception:
+            # If place() fails for any reason, fall back to packing on the right without changing major layout
+            self.attribution_label.pack(side=tk.RIGHT, padx=(0, 10))
+
     # ---------------- file selection ----------------
     def get_file_filter(self):
         fmt = self.input_format.get()
