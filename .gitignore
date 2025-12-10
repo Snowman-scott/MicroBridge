@@ -4,3 +4,4 @@ example_annotations/
 Source_Code/dist/
 Source_Code/build/
 Source_Code/MicroBridge.spec
+.venv/
