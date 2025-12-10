@@ -15,6 +15,7 @@ simplified LMD-compatible XML. This file is a cleaned implementation that:
 import csv
 import os
 import queue
+import sys
 import threading
 import tkinter as tk
 from tkinter import filedialog, messagebox, scrolledtext, ttk
@@ -26,10 +27,26 @@ DEFAULT_OUTPUT_EXT = ".xml"
 QUEUE_POLL_MS = 100
 
 
+def resource_path(relative_path):
+    """Get absolute path to resource, works for dev and for PyInstaller"""
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
+
+
 class MicroBridgeConverterApp:
     def __init__(self, root: tk.Tk):
         self.root = root
         self.root.title(WINDOW_TITLE)
+        try:
+            self.root.iconbitmap(resource_path("MicroBridge_Icon.ico"))
+        except Exception:
+            # Fallback if icon loading fails
+            pass
         self.root.geometry("1000x700")
         self.root.minsize(800, 600)
 
