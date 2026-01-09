@@ -1,0 +1,9 @@
+exports/
+examples/
+example_annotations/
+The_Source_Code/dist/
+The_Source_Code/build/
+The_Source_Code/MicroBridge.spec
+dist/
+build/
+.venv/
