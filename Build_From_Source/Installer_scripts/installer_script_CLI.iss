@@ -4,7 +4,7 @@
 #define MyAppName "MicroBridge CLI"
 #define MyAppVersion "0.1.1"
 #define MyAppPublisher "Rose Scott"
-#define MyAppExeName "MicroBridge.exe"
+#define MyAppExeName "MicroBridge_CLI.exe"
 
 [Setup]
 ; Basic app info (DIFFERENT GUID from GUI version!)
@@ -40,7 +40,7 @@ Source: "dist\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 ; Start Menu shortcuts
-Name: "{group}\MicroBridge CLI"; Filename: "cmd.exe"; Parameters: "/k cd /d ""{app}"" && echo MicroBridge CLI Ready. Type 'MicroBridge --help' for usage."; Comment: "Open command prompt in MicroBridge directory"
+Name: "{group}\MicroBridge CLI"; Filename: "cmd.exe"; Parameters: "/k cd /d ""{app}"" && echo MicroBridge CLI Ready. Type 'MicroBridge_CLI --help' for usage."; Comment: "Open command prompt in MicroBridge directory"
 Name: "{group}\{cm:UninstallProgram,MicroBridge CLI}"; Filename: "{uninstallexe}"
 
 [Registry]
