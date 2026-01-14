@@ -8,18 +8,24 @@ build/
 *.exe
 
 # Python
-The_Source_Code/__pycache__
+The_Source_Code/__pycache__/
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
+*.egg
+*.egg-info/
+.eggs/
+*.manifest
+*.spec
 
 # Virtual environments
 .venv/
 venv/
 ENV/
 env/
+.env
 
 # Examples and test data (if not needed in repo)
 examples/
@@ -32,6 +38,12 @@ example_annotations/
 *.swo
 *~
 .DS_Store
+Thumbs.db
+.project
+.pydevproject
+.settings/
+*.sublime-workspace
+*.sublime-project
 
 # Internal development files
 VERSION_0.1.1_SUMMARY.md
@@ -43,9 +55,34 @@ Installer_scripts/Output/
 tests/__pycache__/
 tests/*.pyc
 tests/test_output/
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
 
 # User-specific files
 user_data/
 
 # Compile files / Installer_scripts
 build_windows.bat
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+*.bak
+*.cache
+
+# OS generated files
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Desktop.ini
+
+# Claude Code
+.claude/
