@@ -285,22 +285,21 @@ class TestNDPAConversion(unittest.TestCase):
 
     def test_output_file_naming(self):
         """Test that output file naming is correct"""
-        input_file = os.path.join(self.test_data_dir, "valid_sample.ndpa")
+        # Copy input file to temp dir to avoid writing to source tree
+        original_file = os.path.join(self.test_data_dir, "valid_sample.ndpa")
+        input_file = os.path.join(self.temp_dir, "valid_sample.ndpa")
+        shutil.copy(original_file, input_file)
 
         # Don't specify output file - should auto-generate
         result = convert_ndpa_to_lmd(input_file, allow_missing_calibration=True)
         self.assertTrue(result)
 
         # Check that output file was created with correct name
-        expected_output = os.path.join(self.test_data_dir, "valid_sample_LMD.xml")
+        expected_output = os.path.join(self.temp_dir, "valid_sample_LMD.xml")
         self.assertTrue(
             os.path.exists(expected_output),
             "Output file should be created with _LMD.xml suffix",
         )
-
-        # Clean up
-        if os.path.exists(expected_output):
-            os.remove(expected_output)
 
 
 class TestCSVConversion(unittest.TestCase):
