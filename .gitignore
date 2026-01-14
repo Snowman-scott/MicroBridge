@@ -43,3 +43,9 @@ Installer_scripts/Output/
 tests/__pycache__/
 tests/*.pyc
 tests/test_output/
+
+# User-specific files
+user_data/
+
+# Compile files / Installer_scripts
+build_windows.bat
