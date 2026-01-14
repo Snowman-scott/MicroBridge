@@ -1,4 +1,6 @@
 import os
+import sys
+import traceback
 from xml.dom import minidom
 from xml.parsers.expat import ExpatError
 
@@ -303,8 +305,6 @@ def convert_ndpa_to_lmd(
 
         # Only show traceback if debug mode
         if "--debug" in sys.argv:
-            import traceback
-
             print("\n  Debug traceback:")
             traceback.print_exc()
         else:
@@ -372,9 +372,6 @@ if __name__ == "__main__":
     print("  • Remaining regions = Shapes to capture with LMD")
     print("=" * 70)
     print()
-
-    # Check command line arguments
-    import sys
 
     # Parse flags
     allow_missing = "--force" in sys.argv
