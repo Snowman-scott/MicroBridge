@@ -162,26 +162,4 @@ All notable changes to this project will be documented in this file.
 
 **Improved compatibility**: If you previously experienced different results between CLI and GUI for the same NDPA file, this has been resolved in v0.1.1.
 
----
 
-## Future Roadmap
-
-### Planned for v0.2.0
-- ✅ ~~Input validation before conversion starts~~ (Completed in v0.1.1)
-- ✅ ~~Pre-flight checks (file existence, write permissions)~~ (Completed in v0.1.1)
-- ✅ ~~Better error messages with actionable guidance~~ (Completed in v0.1.1)
-- ✅ ~~Unit test suite with sample NDPA/CSV files~~ (Completed in v0.1.1)
-- ✅ ~~Keyboard shortcuts for GUI (Ctrl+O, Ctrl+Q, Enter to convert)~~ (Completed in v0.1.1)
-- ✅ ~~BUILD_INSTRUCTIONS.md with complete build process~~ (Completed in v0.1.1)
-- ✅ ~~Progress indication for individual large files~~ (Completed in v0.1.1)
-- Context menu for file list (right-click to remove files, open location)
-- Automated testing in CI/CD pipeline (GitHub Actions)
-
-### Under Consideration
-- Support for additional annotation formats
-- Configurable coordinate precision
-- Export to additional LMD formats
-- macOS/Linux installer support (currently source-only for non-Windows)
-- Drag-and-drop file support in GUI
-- Recent files list
-- Batch operation presets/profiles
