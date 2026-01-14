@@ -2,7 +2,7 @@
 ; Save this as "installer_cli.iss"
 
 #define MyAppName "MicroBridge CLI"
-#define MyAppVersion "0.1"
+#define MyAppVersion "0.1.1"
 #define MyAppPublisher "Rose Scott"
 #define MyAppExeName "MicroBridge.exe"
 
@@ -64,4 +64,4 @@ end;
 [Run]
 ; Don't auto-launch CLI (it's command-line only)
 ; Instead, show a message or open command prompt
-Filename: "{app}\{#MyAppExeName}"; Parameters: "--help"; Flags: postinstall skipifsilent runhidden shellexec; Description: "View MicroBridge CLI help"
+Filename: "{app}\{#MyAppExeName}"; Parameters: "--help"; Flags: postinstall skipifsilent shellexec; Description: "View MicroBridge CLI help"

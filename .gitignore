@@ -1,9 +1,45 @@
+# Build outputs
 exports/
-examples/
-example_annotations/
 The_Source_Code/dist/
 The_Source_Code/build/
 The_Source_Code/MicroBridge.spec
 dist/
 build/
+*.exe
+
+# Python
+The_Source_Code/__pycache__
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
 .venv/
+venv/
+ENV/
+env/
+
+# Examples and test data (if not needed in repo)
+examples/
+example_annotations/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Internal development files
+VERSION_0.1.1_SUMMARY.md
+
+# Installer output
+Installer_scripts/Output/
+
+# Test outputs
+tests/__pycache__/
+tests/*.pyc
+tests/test_output/

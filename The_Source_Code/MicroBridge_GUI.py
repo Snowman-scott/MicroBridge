@@ -20,6 +20,7 @@ import threading
 import tkinter as tk
 from tkinter import filedialog, messagebox, scrolledtext, ttk
 from xml.dom import minidom
+from xml.parsers.expat import ExpatError
 
 # Configuration
 WINDOW_TITLE = "MicroBridge - NDP/CSV to LMD Converter"
@@ -31,7 +32,7 @@ def resource_path(relative_path):
     """Get absolute path to resource, works for dev and for PyInstaller"""
     try:
         # PyInstaller creates a temp folder and stores path in _MEIPASS
-        base_path = sys._MEIPASS
+        base_path = sys._MEIPASS  # type: ignore[attr-defined]
     except Exception:
         base_path = os.path.abspath(".")
 
@@ -59,11 +60,21 @@ class MicroBridgeConverterApp:
         # Thread-safe queue for log/progress updates
         self.queue = queue.Queue()
 
+        # Worker thread management
+        self.worker_thread = None
+        self._stop_event = threading.Event()
+
         # Build UI
         self._build_ui()
 
         # Start polling queue for log/progress updates
         self.root.after(QUEUE_POLL_MS, self._process_queue)
+
+        # Handle window close event
+        self.root.protocol("WM_DELETE_WINDOW", self._on_closing)
+
+        # Setup keyboard shortcuts
+        self._setup_keyboard_shortcuts()
 
     # ---------------- UI ----------------
     def _build_ui(self):
@@ -173,6 +184,54 @@ class MicroBridgeConverterApp:
             self.attribution_label.pack(
                 side=tk.BOTTOM, anchor="e", padx=8, pady=(0, 12)
             )
+
+    def _setup_keyboard_shortcuts(self):
+        """Setup keyboard shortcuts for common operations"""
+        # Ctrl+O - Open files
+        self.root.bind("<Control-o>", lambda e: self.select_files())
+        self.root.bind("<Control-O>", lambda e: self.select_files())
+
+        # Ctrl+Shift+O - Open folder
+        self.root.bind("<Control-Shift-O>", lambda e: self.select_folder())
+        self.root.bind("<Control-Shift-o>", lambda e: self.select_folder())
+
+        # Ctrl+Q - Quit
+        self.root.bind("<Control-q>", lambda e: self._on_closing())
+        self.root.bind("<Control-Q>", lambda e: self._on_closing())
+
+        # Enter - Start conversion (if files are selected)
+        self.root.bind("<Return>", lambda e: self._handle_enter_key())
+
+        # Delete - Remove selected files from list
+        self.file_listbox.bind("<Delete>", lambda e: self._remove_selected_files())
+        self.file_listbox.bind("<BackSpace>", lambda e: self._remove_selected_files())
+
+        # Ctrl+A - Select all files in list
+        self.file_listbox.bind("<Control-a>", lambda e: self._select_all_files())
+        self.file_listbox.bind("<Control-A>", lambda e: self._select_all_files())
+
+    def _handle_enter_key(self):
+        """Handle Enter key - start conversion if files are selected"""
+        if self.input_files and self.convert_btn["state"] != tk.DISABLED:
+            self.start_conversion()
+
+    def _remove_selected_files(self):
+        """Remove selected files from the list"""
+        selected_indices = self.file_listbox.curselection()
+        if not selected_indices:
+            return
+
+        # Remove in reverse order to maintain correct indices
+        for index in reversed(selected_indices):
+            del self.input_files[index]
+
+        self._refresh_file_list()
+        self._enqueue_log(f"Removed {len(selected_indices)} file(s) from list")
+
+    def _select_all_files(self):
+        """Select all files in the listbox"""
+        self.file_listbox.select_set(0, tk.END)
+        return "break"  # Prevent default behavior
 
     # ---------------- file selection ----------------
     def get_file_filter(self):
@@ -309,13 +368,108 @@ class MicroBridgeConverterApp:
         if not self.input_files:
             messagebox.showwarning("No Files", "Please select files to convert")
             return
+
+        # Pre-flight validation
+        validation_errors = []
+
+        # Check 1: Verify all files still exist
+        missing_files = []
+        for filepath in self.input_files:
+            if not os.path.exists(filepath):
+                missing_files.append(os.path.basename(filepath))
+
+        if missing_files:
+            validation_errors.append(
+                "Missing files ({}):\n  • {}".format(
+                    len(missing_files), "\n  • ".join(missing_files[:5])
+                )
+            )
+            if len(missing_files) > 5:
+                validation_errors[-1] += f"\n  • ... and {len(missing_files) - 5} more"
+
+        # Check 2: Verify output folder is writable
+        out_dir = self.output_folder.get()
+        if not out_dir and self.input_files:
+            # Use first input file's directory
+            out_dir = os.path.dirname(self.input_files[0])
+
+        if out_dir and not os.access(out_dir, os.W_OK):
+            validation_errors.append(
+                "Output folder is not writable:\n  {}".format(out_dir)
+            )
+
+        # Check 3: Verify files are readable and appear to be valid format
+        unreadable_files = []
+        invalid_format_files = []
+
+        for filepath in self.input_files:
+            if not os.path.exists(filepath):
+                continue  # Already caught in missing files check
+
+            if not os.access(filepath, os.R_OK):
+                unreadable_files.append(os.path.basename(filepath))
+                continue
+
+            # Quick format validation
+            try:
+                with open(filepath, "r", encoding="utf-8") as f:
+                    first_chars = f.read(100)
+                    lower_path = filepath.lower()
+
+                    # Check if format matches extension
+                    if lower_path.endswith(
+                        ".ndpa"
+                    ) and not first_chars.strip().startswith("<?xml"):
+                        invalid_format_files.append(
+                            "{} (not XML)".format(os.path.basename(filepath))
+                        )
+                    elif lower_path.endswith(".csv") and "<?xml" in first_chars:
+                        invalid_format_files.append(
+                            "{} (appears to be XML, not CSV)".format(
+                                os.path.basename(filepath)
+                            )
+                        )
+            except Exception as e:
+                unreadable_files.append(
+                    "{} ({})".format(os.path.basename(filepath), str(e))
+                )
+
+        if unreadable_files:
+            validation_errors.append(
+                "Cannot read files ({}):\n  • {}".format(
+                    len(unreadable_files), "\n  • ".join(unreadable_files[:5])
+                )
+            )
+
+        if invalid_format_files:
+            validation_errors.append(
+                "Invalid file format ({}):\n  • {}".format(
+                    len(invalid_format_files), "\n  • ".join(invalid_format_files[:5])
+                )
+            )
+
+        # Display validation errors if any
+        if validation_errors:
+            error_msg = "Pre-flight validation failed:\n\n" + "\n\n".join(
+                validation_errors
+            )
+            error_msg += "\n\nPlease fix these issues before starting conversion."
+            messagebox.showerror("Validation Failed", error_msg)
+            return
+
+        # All checks passed - proceed with conversion
         # disable button
         self.convert_btn.config(state=tk.DISABLED)
         self.progress_bar["maximum"] = len(self.input_files)
         self.progress_bar["value"] = 0
         self.progress_label.config(text="Starting...")
-        thread = threading.Thread(target=self._worker_convert_files, daemon=True)
-        thread.start()
+
+        # Clear stop event and start non-daemon worker thread
+        self._stop_event.clear()
+        self.worker_thread = threading.Thread(
+            target=self._worker_convert_files, daemon=False
+        )
+        self.worker_thread.start()
 
     def _worker_convert_files(self):
         total = len(self.input_files)
@@ -326,6 +480,11 @@ class MicroBridgeConverterApp:
 
         # iterate over a shallow copy so modifications to self.input_files won't break loop
         for idx, path in enumerate(list(self.input_files)):
+            # Check if stop was requested
+            if self._stop_event.is_set():
+                self._enqueue_log("\n⚠️ Conversion cancelled by user")
+                break
+
             base = os.path.basename(path)
             self._enqueue_progress_text(
                 "Converting {}/{}: {}".format(idx + 1, total, base)
@@ -355,11 +514,20 @@ class MicroBridgeConverterApp:
 
         # summary
         self._enqueue_log("\n" + "=" * 60)
-        self._enqueue_log(
-            "✓ Conversion complete: {}/{} files successful".format(successful, total)
-        )
+        if self._stop_event.is_set():
+            self._enqueue_log(
+                "⚠️ Conversion stopped: {}/{} files converted before cancellation".format(
+                    successful, total
+                )
+            )
+        else:
+            self._enqueue_log(
+                "✓ Conversion complete: {}/{} files successful".format(
+                    successful, total
+                )
+            )
+            self._enqueue_done(successful, total)
         self._enqueue_log("=" * 60)
-        self._enqueue_done(successful, total)
 
         # re-enable button on main thread
         try:
@@ -425,51 +593,85 @@ class MicroBridgeConverterApp:
                         else "Region_{}".format(i)
                     )
 
-                    # Look for annotation element (circles for reference points)
+                    # Try to get coordinates from annotation element first (circle annotations)
+                    # If not found, fall back to pointlist (freehand annotations)
+                    x_um = None
+                    y_um = None
+
+                    # Method 1: Check for annotation element (circle annotations)
                     annotations = region.getElementsByTagName("annotation")
-                    if not annotations:
+                    if annotations:
+                        annotation = annotations[0]
+                        x_elems = annotation.getElementsByTagName("x")
+                        y_elems = annotation.getElementsByTagName("y")
+
+                        if x_elems and y_elems:
+                            try:
+                                x_nm = float(self._get_element_text(x_elems[0]))
+                                y_nm = float(self._get_element_text(y_elems[0]))
+                                x_um = int(round(x_nm / 1000.0))
+                                y_um = int(round(y_nm / 1000.0))
+                                self._enqueue_log(
+                                    "  Calibration {} ({}): X={}, Y={} (from circle annotation)".format(
+                                        i + 1, title, x_um, y_um
+                                    )
+                                )
+                            except (ValueError, TypeError):
+                                pass
+
+                    # Method 2: Fallback to pointlist (freehand/polygon annotations)
+                    if x_um is None:
+                        pointlists = region.getElementsByTagName("pointlist")
+                        if pointlists:
+                            pts = pointlists[0].getElementsByTagName("point")
+                            if pts:
+                                try:
+                                    first_pt = pts[0]
+                                    x_elems = first_pt.getElementsByTagName("x")
+                                    y_elems = first_pt.getElementsByTagName("y")
+
+                                    x_nm = float(
+                                        self._get_element_text(
+                                            x_elems[0] if x_elems else None
+                                        )
+                                    )
+                                    y_nm = float(
+                                        self._get_element_text(
+                                            y_elems[0] if y_elems else None
+                                        )
+                                    )
+                                    x_um = int(round(x_nm / 1000.0))
+                                    y_um = int(round(y_nm / 1000.0))
+                                    self._enqueue_log(
+                                        "  Calibration {} ({}): X={}, Y={} (from pointlist)".format(
+                                            i + 1, title, x_um, y_um
+                                        )
+                                    )
+                                except (ValueError, TypeError):
+                                    pass
+
+                    # If both methods failed, this is an error
+                    if x_um is None:
                         self._enqueue_log(
-                            "  ⚠️ Calibration point {} ({}) has no annotation!".format(
+                            "  ✗ ERROR: Calibration point {} ({}) has no valid coordinates!".format(
                                 i + 1, title
                             )
                         )
-                        # write zeros if missing
-                        out.write(
-                            "  <X_CalibrationPoint_{}>0</X_CalibrationPoint_{}>\n".format(
-                                i + 1, i + 1
-                            )
-                        )
-                        out.write(
-                            "  <Y_CalibrationPoint_{}>0</Y_CalibrationPoint_{}>\n".format(
-                                i + 1, i + 1
-                            )
-                        )
-                        continue
-
-                    annotation = annotations[0]
-                    # For circle annotations, x and y are direct children
-                    x_elems = annotation.getElementsByTagName("x")
-                    y_elems = annotation.getElementsByTagName("y")
-
-                    if not x_elems or not y_elems:
                         self._enqueue_log(
-                            "  ⚠️ Calibration point {} ({}) missing x/y coordinates!".format(
-                                i + 1, title
-                            )
+                            "  CONVERSION FAILED - Missing calibration data"
                         )
-                        x_um = 0
-                        y_um = 0
-                    else:
-                        x_nm = float(self._get_element_text(x_elems[0]))
-                        y_nm = float(self._get_element_text(y_elems[0]))
-                        x_um = int(round(x_nm / 1000.0))
-                        y_um = int(round(y_nm / 1000.0))
-
-                    self._enqueue_log(
-                        "  Calibration {} ({}): X={}, Y={} (from circle annotation)".format(
-                            i + 1, title, x_um, y_um
+                        self._enqueue_log(
+                            "  The LMD system requires accurate calibration points."
                         )
-                    )
+                        self._enqueue_log("\n  To fix this issue:")
+                        self._enqueue_log("    1. Open the file in NDP.view2")
+                        self._enqueue_log(
+                            "    2. Ensure the first 3 regions have valid annotations"
+                        )
+                        self._enqueue_log(
+                            "    3. Use circle annotations for calibration points (recommended)"
+                        )
+                        return False
 
                     out.write(
                         "  <X_CalibrationPoint_{}>{}</X_CalibrationPoint_{}>\n".format(
@@ -482,15 +684,8 @@ class MicroBridgeConverterApp:
                         )
                     )
 
-                num_shapes = max(0, len(regions) - 3)
-                out.write("  <ShapeCount>{}</ShapeCount>\n".format(num_shapes))
-                self._enqueue_log(
-                    "  DEBUG: Processing {} shapes from regions 3-{}".format(
-                        num_shapes, len(regions) - 1
-                    )
-                )
-
-                # shapes - these use pointlists
+                # First pass: collect valid shapes (regions with pointlists and points)
+                valid_shapes = []
                 for si in range(3, len(regions)):
                     region = regions[si]
                     shape_num = si - 2
@@ -505,21 +700,38 @@ class MicroBridgeConverterApp:
                     # For freehand shapes, look for pointlist > point
                     pointlists = region.getElementsByTagName("pointlist")
                     if not pointlists:
-                        self._enqueue_log(
-                            "  ⚠️ Shape {} ({}) has no pointlist - skipping".format(
-                                shape_num, title
-                            )
-                        )
                         continue
 
                     pts = pointlists[0].getElementsByTagName("point")
                     if not pts:
-                        self._enqueue_log(
-                            "  ⚠️ Shape {} ({}) has no points - skipping".format(
-                                shape_num, title
+                        continue
+
+                    valid_shapes.append(
+                        {"shape_num": shape_num, "title": title, "pts": pts}
+                    )
+
+                # Write actual ShapeCount based on valid shapes
+                num_shapes = len(valid_shapes)
+                out.write("  <ShapeCount>{}</ShapeCount>\n".format(num_shapes))
+                self._enqueue_log(
+                    "  DEBUG: Processing {} shapes from regions 3-{}".format(
+                        num_shapes, len(regions) - 1
+                    )
+                )
+
+                # Second pass: write valid shapes
+                for idx, shape_data in enumerate(valid_shapes):
+                    shape_num = shape_data["shape_num"]
+                    title = shape_data["title"]
+                    pts = shape_data["pts"]
+
+                    # Update progress for large files (>10 shapes)
+                    if num_shapes > 10:
+                        self._enqueue_progress_text(
+                            "Converting: {} (Shape {}/{})".format(
+                                os.path.basename(input_path), idx + 1, num_shapes
                             )
                         )
-                        continue
 
                     out.write("  <Shape_{}>\n".format(shape_num))
                     out.write("    <PointCount>{}</PointCount>\n".format(len(pts)))
@@ -565,11 +777,47 @@ class MicroBridgeConverterApp:
                 "  DEBUG: Conversion complete - check calibration point coordinates"
             )
             return True
+        except FileNotFoundError:
+            self._enqueue_log("  ✗ ERROR: Input file not found")
+            self._enqueue_log("  The file may have been moved or deleted.")
+            self._enqueue_log("  Please check the file path and try again.")
+            return False
+        except PermissionError:
+            self._enqueue_log("  ✗ ERROR: Permission denied")
+            self._enqueue_log(
+                "  You don't have permission to read this file or write to the output location."
+            )
+            self._enqueue_log(
+                "  Try choosing a different output folder with write permissions."
+            )
+            return False
+        except ExpatError as e:
+            self._enqueue_log("  ✗ ERROR: Invalid XML format")
+            self._enqueue_log("  Details: {}".format(e))
+            self._enqueue_log("  This file may be corrupted or not a valid NDPA file.")
+            self._enqueue_log("  Try opening it in NDP.view2 to verify it's valid.")
+            return False
+        except ValueError as e:
+            self._enqueue_log("  ✗ ERROR: Invalid data in file")
+            self._enqueue_log("  Details: {}".format(e))
+            self._enqueue_log("  The file contains invalid coordinate or numeric data.")
+            self._enqueue_log("  Please check the annotation data in NDP.view2.")
+            return False
         except Exception as e:
             import traceback
 
-            self._enqueue_log("  ✗ ERROR when converting NDPA: {}".format(e))
-            self._enqueue_log("  DEBUG: {}".format(traceback.format_exc()))
+            self._enqueue_log("  ✗ ERROR: Unexpected error during conversion")
+            self._enqueue_log("  Error: {}".format(e))
+            self._enqueue_log("\n  This is an unexpected error. If it persists:")
+            self._enqueue_log("    1. Check that the file is a valid NDPA file")
+            self._enqueue_log(
+                "    2. Try converting other files to see if the issue is file-specific"
+            )
+            self._enqueue_log(
+                "    3. Report this issue at: https://github.com/Snowman-scott/MicroBridge/issues"
+            )
+            self._enqueue_log("\n  Debug information:")
+            self._enqueue_log("  {}".format(traceback.format_exc()))
             return False
 
     def convert_csv_file(self, input_path: str) -> bool:
@@ -668,9 +916,67 @@ class MicroBridgeConverterApp:
                 "  ⚠️ CSV export lacks polygon vertices - use NDPA format for full shape data"
             )
             return True
-        except Exception as e:
-            self._enqueue_log("  ✗ ERROR when converting CSV: {}".format(e))
+        except FileNotFoundError:
+            self._enqueue_log("  ✗ ERROR: Input file not found")
+            self._enqueue_log("  The file may have been moved or deleted.")
             return False
+        except PermissionError:
+            self._enqueue_log("  ✗ ERROR: Permission denied")
+            self._enqueue_log(
+                "  You don't have permission to read this file or write to the output location."
+            )
+            return False
+        except UnicodeDecodeError as e:
+            self._enqueue_log("  ✗ ERROR: Cannot read file - encoding issue")
+            self._enqueue_log("  Details: {}".format(e))
+            self._enqueue_log(
+                "  The file may not be a valid CSV or may use an unsupported encoding."
+            )
+            return False
+        except Exception as e:
+            import traceback
+
+            self._enqueue_log("  ✗ ERROR: Unexpected error converting CSV")
+            self._enqueue_log("  Error: {}".format(e))
+            self._enqueue_log("  Please verify the CSV file format is correct.")
+            self._enqueue_log("\n  Debug information:")
+            self._enqueue_log("  {}".format(traceback.format_exc()))
+            return False
+
+    def _on_closing(self):
+        """Handle window close event - warn if conversion is running"""
+        if self.worker_thread and self.worker_thread.is_alive():
+            # Conversion is running - ask user to confirm
+            response = messagebox.askyesno(
+                "Conversion in Progress",
+                "A file conversion is currently running. Closing now may leave incomplete files.\n\n"
+                "Do you want to stop the conversion and exit?",
+                icon="warning",
+            )
+            if response:
+                # User confirmed - signal worker to stop
+                self._stop_event.set()
+                self._enqueue_log(
+                    "\n⚠️ Shutdown requested - waiting for current file to finish..."
+                )
+                self.progress_label.config(text="Stopping...")
+
+                # Wait for worker thread to finish (with timeout)
+                self.worker_thread.join(timeout=10.0)
+
+                if self.worker_thread.is_alive():
+                    # Thread didn't finish in time - warn user
+                    messagebox.showwarning(
+                        "Force Close",
+                        "Worker thread did not stop in time. Some files may be incomplete.",
+                    )
+
+                # Close the window
+                self.root.destroy()
+            # else: user cancelled - do nothing, keep window open
+        else:
+            # No conversion running - safe to close
+            self.root.destroy()
 
 
 if __name__ == "__main__":
