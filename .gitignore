@@ -50,6 +50,7 @@ VERSION_0.1.1_SUMMARY.md
 
 # Installer output
 Installer_scripts/Output/
+Build/Installer_scripts/Output/
 
 # Test outputs
 tests/__pycache__/
@@ -84,5 +85,6 @@ Desktop.ini
 # Claude Code
 .claude/
 
-#Misc
-GITHUB_RELEASE_v0.1.1.md
+# Release files (not for repo)
+RELEASE_README.txt
+GITHUB_RELEASE*.md
