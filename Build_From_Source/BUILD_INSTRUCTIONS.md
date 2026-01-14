@@ -83,14 +83,16 @@ If you need to customize the build or the spec file is missing:
 
 **IMPORTANT:** Run from the project root directory.
 
+**Recommended:** Use the automated build script (Option 1) or spec file (Option 2) instead of manual commands.
+
+**Windows Command Prompt:**
+```batch
+pyinstaller --name="MicroBridge" --onedir --windowed --icon="The_Source_Code\MicroBridge_Icon.ico" --version-file="The_Source_Code\version_info.txt" --add-data="The_Source_Code\MicroBridge_Icon.ico;." The_Source_Code\MicroBridge_GUI.py
+```
+
+**PowerShell / Unix / Git Bash:**
 ```bash
-pyinstaller --name="MicroBridge" \
-    --onedir \
-    --windowed \
-    --icon="The_Source_Code/MicroBridge_Icon.ico" \
-    --version-file="The_Source_Code/version_info.txt" \
-    --add-data="The_Source_Code/MicroBridge_Icon.ico;." \
-    The_Source_Code/MicroBridge_GUI.py
+pyinstaller --name="MicroBridge" --onedir --windowed --icon="The_Source_Code/MicroBridge_Icon.ico" --version-file="The_Source_Code/version_info.txt" --add-data="The_Source_Code/MicroBridge_Icon.ico;." The_Source_Code/MicroBridge_GUI.py
 ```
 
 **Flags explained:**
@@ -104,13 +106,16 @@ pyinstaller --name="MicroBridge" \
 
 For the command-line version:
 
+**Recommended:** Use the automated build script (Option 1) instead of manual commands.
+
+**Windows Command Prompt:**
+```batch
+pyinstaller --name="MicroBridge_CLI" --onedir --console --icon="The_Source_Code\MicroBridge_Icon.ico" --version-file="The_Source_Code\version_info.txt" The_Source_Code\MicroBridge_CLI.py
+```
+
+**PowerShell / Unix / Git Bash:**
 ```bash
-pyinstaller --name="MicroBridge_CLI" \
-    --onedir \
-    --console \
-    --icon="The_Source_Code/MicroBridge_Icon.ico" \
-    --version-file="The_Source_Code/version_info.txt" \
-    The_Source_Code/MicroBridge_CLI.py
+pyinstaller --name="MicroBridge_CLI" --onedir --console --icon="The_Source_Code/MicroBridge_Icon.ico" --version-file="The_Source_Code/version_info.txt" The_Source_Code/MicroBridge_CLI.py
 ```
 
 **Flags explained:**
@@ -290,12 +295,24 @@ python -m PyInstaller MicroBridge.spec
 - Check path is relative to project root
 
 #### "Module not found" errors
-```bash
-# Clean PyInstaller cache
-pyinstaller --clean MicroBridge.spec
 
-# Or manually delete
-rm -rf build/ dist/ __pycache__/
+**Clean PyInstaller cache:**
+```bash
+pyinstaller --clean MicroBridge.spec
+```
+
+**Manually delete build artifacts:**
+
+Windows Command Prompt:
+```batch
+rmdir /s /q build
+rmdir /s /q dist
+rmdir /s /q __pycache__
+```
+
+PowerShell:
+```powershell
+Remove-Item -Recurse -Force build, dist, __pycache__ -ErrorAction SilentlyContinue
 ```
 
 #### Installer fails: "Source file not found"
@@ -310,14 +327,44 @@ rm -rf build/ dist/ __pycache__/
 
 ### Build Size Optimization
 
-Default builds are ~30-50 MB due to bundled Python. To reduce size:
+Default builds can be large. To reduce the executable size, you can exclude unused modules. There are two methods depending on your build process:
 
+**1. Manual Build: Using `--exclude-module` Flag**
+
+When building manually from the command line (without a `.spec` file), use the `--exclude-module` flag for each module you want to exclude.
+
+*Example:*
 ```bash
-# Use --exclude-module for unused libraries
-pyinstaller MicroBridge.spec --exclude-module matplotlib --exclude-module numpy
+pyinstaller --onedir --windowed --exclude-module matplotlib --exclude-module numpy The_Source_Code/MicroBridge_GUI.py
 ```
 
-**Note:** MicroBridge only uses Python standard library, so this has minimal effect.
+**2. Spec File Build: Editing `Analysis.excludes`**
+
+PyInstaller **ignores** the `--exclude-module` command-line flag when you build using a `.spec` file.
+
+To exclude modules, you **must** edit the `MicroBridge.spec` file and add the module names to the `excludes` list inside the `Analysis` section.
+
+*Example `MicroBridge.spec` modification:*
+```python
+# In MicroBridge.spec
+a = Analysis(
+    ['The_Source_Code/MicroBridge_GUI.py'],
+    pathex=['.'],
+    binaries=[],
+    datas=[],
+    hiddenimports=[],
+    hookspath=[],
+    runtime_hooks=[],
+    # Add modules to exclude here
+    excludes=['matplotlib', 'numpy', 'scipy'],
+    win_no_prefer_redirects=False,
+    win_private_assemblies=False,
+    cipher=None,
+    noarchive=False
+)
+```
+
+**Note:** MicroBridge only uses Python's standard library. Excluding third-party modules like `numpy` or `matplotlib` may not be necessary unless they are being incorrectly bundled from your local Python environment, and thus may have minimal effect on build size.
 
 ---
 
