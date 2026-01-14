@@ -40,7 +40,28 @@ MicroBridge/
 
 ## Building Executables
 
-### Option 1: Using PyInstaller Spec File (Recommended)
+### Option 1: Using Automated Build Script (Easiest)
+
+**IMPORTANT:** The build scripts **MUST** be run from the project root directory, not from inside the `Build_From_Source` folder.
+
+```bash
+# Navigate to project root
+cd /path/to/MicroBridge
+
+# Run the Windows build script
+Build_From_Source\build_windows.bat
+```
+
+This script will:
+1. Build the GUI version (`MicroBridge.exe`)
+2. Build the CLI version (`MicroBridge_CLI.exe`)
+3. Place outputs in the `dist/` folder
+
+**Output locations:**
+- GUI: `dist/MicroBridge/MicroBridge.exe` (with `_internal/` folder)
+- CLI: `dist/MicroBridge_CLI.exe`
+
+### Option 2: Using PyInstaller Spec File
 
 The included `MicroBridge.spec` file configures the GUI build with all necessary settings.
 
@@ -56,9 +77,11 @@ pyinstaller MicroBridge.spec
 - `MicroBridge.exe`
 - `_internal/` folder with dependencies
 
-### Option 2: Building GUI Manually
+### Option 3: Building GUI Manually
 
 If you need to customize the build or the spec file is missing:
+
+**IMPORTANT:** Run from the project root directory.
 
 ```bash
 pyinstaller --name="MicroBridge" \
