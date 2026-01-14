@@ -2,9 +2,9 @@
 ; Save this as "installer_cli.iss"
 
 #define MyAppName "MicroBridge CLI"
-#define MyAppVersion "0.1"
+#define MyAppVersion "0.1.1"
 #define MyAppPublisher "Rose Scott"
-#define MyAppExeName "MicroBridge.exe"
+#define MyAppExeName "MicroBridge_CLI.exe"
 
 [Setup]
 ; Basic app info (DIFFERENT GUID from GUI version!)
@@ -35,12 +35,13 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "addtopath"; Description: "Add MicroBridge to system PATH (allows running from any command prompt)"; GroupDescription: "Additional options:"; Flags: unchecked
 
 [Files]
-; Main executable
-Source: "dist\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+; Main executable and dependencies
+Source: "dist\MicroBridge_CLI\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "dist\MicroBridge_CLI\_internal\*"; DestDir: "{app}\_internal"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 ; Start Menu shortcuts
-Name: "{group}\MicroBridge CLI"; Filename: "cmd.exe"; Parameters: "/k cd /d ""{app}"" && echo MicroBridge CLI Ready. Type 'MicroBridge --help' for usage."; Comment: "Open command prompt in MicroBridge directory"
+Name: "{group}\MicroBridge CLI"; Filename: "cmd.exe"; Parameters: "/k cd /d ""{app}"" && echo MicroBridge CLI Ready. Type 'MicroBridge_CLI --help' for usage."; Comment: "Open command prompt in MicroBridge directory"
 Name: "{group}\{cm:UninstallProgram,MicroBridge CLI}"; Filename: "{uninstallexe}"
 
 [Registry]
@@ -64,4 +65,4 @@ end;
 [Run]
 ; Don't auto-launch CLI (it's command-line only)
 ; Instead, show a message or open command prompt
-Filename: "{app}\{#MyAppExeName}"; Parameters: "--help"; Flags: postinstall skipifsilent runhidden shellexec; Description: "View MicroBridge CLI help"
+Filename: "{app}\{#MyAppExeName}"; Parameters: "--help"; Flags: postinstall skipifsilent shellexec; Description: "View MicroBridge CLI help"

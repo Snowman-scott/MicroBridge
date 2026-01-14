@@ -1,0 +1,6 @@
+Region,ID,Type,Name,Color,X,Y
+1,1,Point,Calib_1,Red,100,200
+2,2,Point,Calib_2,Red,150,250
+3,3,Point,Calib_3,Red,200,300
+4,4,ROI,ROI_1,Blue,300,400
+5,5,ROI,ROI_2,Blue,500,600
