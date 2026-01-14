@@ -44,7 +44,7 @@ echo.
 
 pyinstaller ^
     --name="MicroBridge_CLI" ^
-    --onefile ^
+    --onedir ^
     --console ^
     --icon="The_Source_Code\MicroBridge_Icon.ico" ^
     --version-file="The_Source_Code\version_info.txt" ^
@@ -67,7 +67,7 @@ echo ============================================================
 echo.
 echo Output:
 echo   GUI: dist\MicroBridge\MicroBridge.exe
-echo   CLI: dist\MicroBridge_CLI.exe
+echo   CLI: dist\MicroBridge_CLI\MicroBridge_CLI.exe
 echo.
 echo The icon file is included in the GUI dist folder.
 echo.

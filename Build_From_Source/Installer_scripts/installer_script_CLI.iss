@@ -35,8 +35,9 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "addtopath"; Description: "Add MicroBridge to system PATH (allows running from any command prompt)"; GroupDescription: "Additional options:"; Flags: unchecked
 
 [Files]
-; Main executable
-Source: "dist\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+; Main executable and dependencies
+Source: "dist\MicroBridge_CLI\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "dist\MicroBridge_CLI\_internal\*"; DestDir: "{app}\_internal"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 ; Start Menu shortcuts

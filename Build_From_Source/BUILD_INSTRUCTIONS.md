@@ -59,7 +59,7 @@ This script will:
 
 **Output locations:**
 - GUI: `dist/MicroBridge/MicroBridge.exe` (with `_internal/` folder)
-- CLI: `dist/MicroBridge_CLI.exe`
+- CLI: `dist/MicroBridge_CLI/MicroBridge_CLI.exe` (with `_internal/` folder)
 
 ### Option 2: Using PyInstaller Spec File
 
@@ -106,7 +106,7 @@ For the command-line version:
 
 ```bash
 pyinstaller --name="MicroBridge_CLI" \
-    --onefile \
+    --onedir \
     --console \
     --icon="The_Source_Code/MicroBridge_Icon.ico" \
     --version-file="The_Source_Code/version_info.txt" \
@@ -114,10 +114,10 @@ pyinstaller --name="MicroBridge_CLI" \
 ```
 
 **Flags explained:**
-- `--onefile`: Single executable (no dependencies folder)
+- `--onedir`: Creates a folder with executable and dependencies (consistent with GUI)
 - `--console`: Shows console window for CLI output
 
-**Output:** `dist/MicroBridge_CLI.exe`
+**Output:** `dist/MicroBridge_CLI/MicroBridge_CLI.exe`
 
 ---
 
@@ -147,7 +147,10 @@ MicroBridge/
 ```
 MicroBridge/
 ├── dist/
-│   └── MicroBridge_CLI.exe
+│   └── MicroBridge_CLI/
+│       ├── MicroBridge_CLI.exe
+│       └── _internal/
+│           └── (all dependencies)
 └── Installer_scripts/
     └── installer_script_CLI.iss
 ```
@@ -203,7 +206,7 @@ if %errorlevel% neq 0 (
 
 echo.
 echo [2/4] Building CLI executable...
-pyinstaller --name="MicroBridge_CLI" --onefile --console --icon="The_Source_Code/MicroBridge_Icon.ico" --version-file="The_Source_Code/version_info.txt" The_Source_Code/MicroBridge_CLI.py
+pyinstaller --name="MicroBridge_CLI" --onedir --console --icon="The_Source_Code/MicroBridge_Icon.ico" --version-file="The_Source_Code/version_info.txt" The_Source_Code/MicroBridge_CLI.py
 if %errorlevel% neq 0 (
     echo ERROR: CLI build failed
     exit /b 1
@@ -297,7 +300,7 @@ rm -rf build/ dist/ __pycache__/
 
 #### Installer fails: "Source file not found"
 - Check that `MicroBridge_\MicroBridge\MicroBridge.exe` exists
-- For CLI: Check `dist\MicroBridge_CLI.exe` exists
+- For CLI: Check `dist\MicroBridge_CLI\MicroBridge_CLI.exe` exists
 - Paths in `.iss` files are relative to the script location
 
 #### Antivirus flags executable
