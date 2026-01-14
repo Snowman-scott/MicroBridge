@@ -132,7 +132,6 @@ All notable changes to this project will be documented in this file.
 ### 📌 Known Limitations
 - CSV exports only contain centroid coordinates, not full polygon vertices
 - Installer scripts are Windows-only (source code works cross-platform)
-- No automated tests yet (planned for v0.2.0)
 
 ---
 
