@@ -64,9 +64,6 @@ htmlcov/
 # User-specific files
 user_data/
 
-# Compile files / Installer_scripts
-build_windows.bat
-
 # Logs and temporary files
 *.log
 *.tmp
@@ -86,3 +83,6 @@ Desktop.ini
 
 # Claude Code
 .claude/
+
+#Misc
+GITHUB_RELEASE_v0.1.1.md
