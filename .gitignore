@@ -50,7 +50,7 @@ VERSION_0.1.1_SUMMARY.md
 
 # Installer output
 Installer_scripts/Output/
-Build/Installer_scripts/Output/
+Build_From_Source/Installer_scripts/Output/
 
 # Test outputs
 tests/__pycache__/

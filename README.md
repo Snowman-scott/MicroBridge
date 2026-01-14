@@ -30,7 +30,7 @@ python The_Source_Code/MicroBridge_GUI.py
 python The_Source_Code/MicroBridge_CLI.py [files...]
 ```
 
-For building executables, see [Build/BUILD_INSTRUCTIONS.md](Build/BUILD_INSTRUCTIONS.md).
+For building executables, see [BUILD_INSTRUCTIONS.md](Build_From_Source/BUILD_INSTRUCTIONS.md).
 
 ## Annotation Requirements
 
