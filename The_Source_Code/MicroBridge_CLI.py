@@ -52,185 +52,141 @@ def convert_ndpa_to_lmd(
                 return False
             print("Proceeding with available regions...")
 
-        # Create output XML file
-        with open(output_filename, "w", encoding="utf-8") as f1:
-            # Write XML header
-            f1.write('<?xml version="1.0" encoding="utf-8"?>\n')
-            f1.write("<ImageData>\n")
-            f1.write("  <GlobalCoordinates>1</GlobalCoordinates>\n")
+        print("\nProcessing calibration points...")
 
-            print("\nProcessing calibration points...")
+        # First pass: validate and collect calibration points BEFORE writing any file
+        calibration_points = []
+        for cal_idx in range(min(3, len(regions))):
+            region = regions[cal_idx]
 
-            # Process first 3 regions as calibration points
-            for cal_idx in range(min(3, len(regions))):
-                region = regions[cal_idx]
+            # Get region title for debugging
+            title_elem = region.getElementsByTagName("title")
+            title = (
+                title_elem[0].firstChild.data  # type: ignore[attr-defined]
+                if title_elem and title_elem[0].firstChild
+                else "Unnamed"
+            )
 
-                # Get region title for debugging
-                title_elem = region.getElementsByTagName("title")
-                title = (
-                    title_elem[0].firstChild.data  # type: ignore[attr-defined]
-                    if title_elem and title_elem[0].firstChild
-                    else "Unnamed"
-                )
+            # Try to get coordinates from annotation element first (circle annotations)
+            # If not found, fall back to pointlist (freehand annotations)
+            x_um = None
+            y_um = None
 
-                # Try to get coordinates from annotation element first (circle annotations)
-                # If not found, fall back to pointlist (freehand annotations)
-                x_um = None
-                y_um = None
+            # Method 1: Check for annotation element (circle annotations)
+            annotations = region.getElementsByTagName("annotation")
+            if annotations:
+                annotation = annotations[0]
+                x_elems = annotation.getElementsByTagName("x")
+                y_elems = annotation.getElementsByTagName("y")
 
-                # Method 1: Check for annotation element (circle annotations)
-                annotations = region.getElementsByTagName("annotation")
-                if annotations:
-                    annotation = annotations[0]
-                    x_elems = annotation.getElementsByTagName("x")
-                    y_elems = annotation.getElementsByTagName("y")
-
-                    if x_elems and y_elems:
-                        try:
-                            x_nm = float(
-                                x_elems[0].firstChild.data  # type: ignore[attr-defined]
-                                if x_elems[0].firstChild
-                                else 0
-                            )
-                            y_nm = float(
-                                y_elems[0].firstChild.data  # type: ignore[attr-defined]
-                                if y_elems[0].firstChild
-                                else 0
-                            )
-                            x_um = int(round(x_nm / 1000))
-                            y_um = int(round(y_nm / 1000))
-                            print(
-                                f"  Calibration Point {cal_idx + 1} ('{title}'): X={x_um} µm, Y={y_um} µm (from circle annotation)"
-                            )
-                        except (ValueError, AttributeError):
-                            pass
-
-                # Method 2: Fallback to pointlist (freehand/polygon annotations)
-                if x_um is None:
-                    pointlist = region.getElementsByTagName("point")
-                    if len(pointlist) > 0:
-                        try:
-                            first_point = pointlist[0]
-                            x_elem = first_point.getElementsByTagName("x")[0]
-                            y_elem = first_point.getElementsByTagName("y")[0]
-
-                            x_nm = float(
-                                x_elem.firstChild.data  # type: ignore[attr-defined]
-                                if x_elem.firstChild
-                                and hasattr(x_elem.firstChild, "data")
-                                else 0
-                            )
-                            y_nm = float(
-                                y_elem.firstChild.data  # type: ignore[attr-defined]
-                                if y_elem.firstChild
-                                and hasattr(y_elem.firstChild, "data")
-                                else 0
-                            )
-                            x_um = int(round(x_nm / 1000))
-                            y_um = int(round(y_nm / 1000))
-                            print(
-                                f"  Calibration Point {cal_idx + 1} ('{title}'): X={x_um} µm, Y={y_um} µm (from pointlist)"
-                            )
-                        except (ValueError, AttributeError):
-                            pass
-
-                # If both methods failed, handle missing calibration point
-                if x_um is None:
-                    print(
-                        f"  ERROR: Calibration region {cal_idx + 1} ('{title}') has no valid coordinates!"
-                    )
-                    if not allow_missing_calibration:
-                        print("\n✗ CONVERSION FAILED")
-                        print(
-                            f"  Calibration point {cal_idx + 1} is missing valid coordinate data."
+                if x_elems and y_elems:
+                    try:
+                        x_nm = float(
+                            x_elems[0].firstChild.data  # type: ignore[attr-defined]
+                            if x_elems[0].firstChild
+                            else 0
                         )
-                        print(
-                            "  The LMD system requires accurate calibration points to function correctly."
+                        y_nm = float(
+                            y_elems[0].firstChild.data  # type: ignore[attr-defined]
+                            if y_elems[0].firstChild
+                            else 0
                         )
-                        print("\n  To fix this issue:")
-                        print("    1. Open the file in NDP.view2")
+                        x_um = int(round(x_nm / 1000))
+                        y_um = int(round(y_nm / 1000))
                         print(
-                            "    2. Ensure the first 3 regions have valid annotations"
+                            f"  Calibration Point {cal_idx + 1} ('{title}'): X={x_um} µm, Y={y_um} µm (from circle annotation)"
                         )
-                        print(
-                            "    3. Use circle annotations for calibration points (recommended)"
-                        )
-                        print(
-                            "\n  To force conversion with placeholder (0,0) coordinates, use --force flag"
-                        )
-                        return False
-                    else:
-                        # User explicitly allowed placeholder coordinates
-                        x_um = 0
-                        y_um = 0
-                        print(
-                            "  WARNING: Using placeholder coordinates (0,0) - LMD system may malfunction!"
-                        )
-                        print(
-                            f"  Calibration Point {cal_idx + 1} ('{title}'): X={x_um} µm, Y={y_um} µm (placeholder)"
-                        )
+                    except (ValueError, AttributeError):
+                        pass
 
-                # Write calibration point (either real or placeholder)
-                f1.write(
-                    f"  <X_CalibrationPoint_{cal_idx + 1}>{x_um}</X_CalibrationPoint_{cal_idx + 1}>\n"
-                )
-                f1.write(
-                    f"  <Y_CalibrationPoint_{cal_idx + 1}>{y_um}</Y_CalibrationPoint_{cal_idx + 1}>\n"
-                )
-
-            # First pass: collect valid shapes (regions with points)
-            valid_shapes = []
-            for shape_idx in range(3, len(regions)):
-                region = regions[shape_idx]
-                shape_num = shape_idx - 2  # Shape numbering starts at 1
-
-                # Get region title
-                title_elem = region.getElementsByTagName("title")
-                title = (
-                    title_elem[0].firstChild.data  # type: ignore[attr-defined]
-                    if title_elem and title_elem[0].firstChild
-                    else f"Shape_{shape_num}"
-                )
-
-                # Get all points in this region
+            # Method 2: Fallback to pointlist (freehand/polygon annotations)
+            if x_um is None:
                 pointlist = region.getElementsByTagName("point")
-                num_points = len(pointlist)
+                if len(pointlist) > 0:
+                    try:
+                        first_point = pointlist[0]
+                        x_elem = first_point.getElementsByTagName("x")[0]
+                        y_elem = first_point.getElementsByTagName("y")[0]
 
-                if num_points > 0:
-                    valid_shapes.append(
-                        {
-                            "shape_num": shape_num,
-                            "title": title,
-                            "pointlist": pointlist,
-                            "num_points": num_points,
-                        }
+                        x_nm = float(
+                            x_elem.firstChild.data  # type: ignore[attr-defined]
+                            if x_elem.firstChild and hasattr(x_elem.firstChild, "data")
+                            else 0
+                        )
+                        y_nm = float(
+                            y_elem.firstChild.data  # type: ignore[attr-defined]
+                            if y_elem.firstChild and hasattr(y_elem.firstChild, "data")
+                            else 0
+                        )
+                        x_um = int(round(x_nm / 1000))
+                        y_um = int(round(y_nm / 1000))
+                        print(
+                            f"  Calibration Point {cal_idx + 1} ('{title}'): X={x_um} µm, Y={y_um} µm (from pointlist)"
+                        )
+                    except (ValueError, AttributeError):
+                        pass
+
+            # If both methods failed, handle missing calibration point
+            if x_um is None:
+                print(
+                    f"  ERROR: Calibration region {cal_idx + 1} ('{title}') has no valid coordinates!"
+                )
+                if not allow_missing_calibration:
+                    print("\n✗ CONVERSION FAILED")
+                    print(
+                        f"  Calibration point {cal_idx + 1} is missing valid coordinate data."
+                    )
+                    print(
+                        "  The LMD system requires accurate calibration points to function correctly."
+                    )
+                    print("\n  To fix this issue:")
+                    print("    1. Open the file in NDP.view2")
+                    print("    2. Ensure the first 3 regions have valid annotations")
+                    print(
+                        "    3. Use circle annotations for calibration points (recommended)"
+                    )
+                    print(
+                        "\n  To force conversion with placeholder (0,0) coordinates, use --force flag"
+                    )
+                    return False
+                else:
+                    # User explicitly allowed placeholder coordinates
+                    x_um = 0
+                    y_um = 0
+                    print(
+                        "  WARNING: Using placeholder coordinates (0,0) - LMD system may malfunction!"
+                    )
+                    print(
+                        f"  Calibration Point {cal_idx + 1} ('{title}'): X={x_um} µm, Y={y_um} µm (placeholder)"
                     )
 
-            # Write actual ShapeCount based on valid shapes
-            num_shapes = len(valid_shapes)
-            f1.write(f"  <ShapeCount>{num_shapes}</ShapeCount>\n")
+            calibration_points.append((x_um, y_um))
 
-            print(f"\nProcessing {num_shapes} capture shapes...")
+        # Collect valid shapes (regions with points)
+        valid_shapes = []
+        for shape_idx in range(3, len(regions)):
+            region = regions[shape_idx]
+            shape_num = shape_idx - 2  # Shape numbering starts at 1
 
-            # Second pass: write valid shapes
-            for shape_data in valid_shapes:
-                shape_num = shape_data["shape_num"]
-                title = shape_data["title"]
-                pointlist = shape_data["pointlist"]
-                num_points = shape_data["num_points"]
+            # Get region title
+            title_elem = region.getElementsByTagName("title")
+            title = (
+                title_elem[0].firstChild.data  # type: ignore[attr-defined]
+                if title_elem and title_elem[0].firstChild
+                else f"Shape_{shape_num}"
+            )
 
-                print(f"  Shape {shape_num} ('{title}'): {num_points} vertices")
+            # Get all points in this region
+            pointlist = region.getElementsByTagName("point")
+            num_points = len(pointlist)
 
-                # Write shape header
-                f1.write(f"  <Shape_{shape_num}>\n")
-                f1.write(f"    <PointCount>{num_points}</PointCount>\n")
-
-                # Write all vertices for this shape
-                for point_idx, point in enumerate(pointlist):
+            if num_points > 0:
+                # Extract all point coordinates
+                points = []
+                for point in pointlist:
                     x_elem = point.getElementsByTagName("x")[0]
                     y_elem = point.getElementsByTagName("y")[0]
 
-                    # Convert from nanometers to micrometers and round to integer
                     x_nm = float(
                         x_elem.firstChild.data  # type: ignore[attr-defined]
                         if x_elem.firstChild and hasattr(x_elem.firstChild, "data")
@@ -241,14 +197,56 @@ def convert_ndpa_to_lmd(
                         if y_elem.firstChild and hasattr(y_elem.firstChild, "data")
                         else 0
                     )
-                    x_um = int(round(x_nm / 1000))
-                    y_um = int(round(y_nm / 1000))
+                    points.append((int(round(x_nm / 1000)), int(round(y_nm / 1000))))
 
-                    # Write point coordinates
+                valid_shapes.append(
+                    {
+                        "shape_num": shape_num,
+                        "title": title,
+                        "points": points,
+                        "num_points": num_points,
+                    }
+                )
+
+        num_shapes = len(valid_shapes)
+        print(f"\nProcessing {num_shapes} capture shapes...")
+
+        for shape_data in valid_shapes:
+            print(
+                f"  Shape {shape_data['shape_num']} ('{shape_data['title']}'): {shape_data['num_points']} vertices"
+            )
+
+        # All validation passed - now write the output file
+        with open(output_filename, "w", encoding="utf-8") as f1:
+            # Write XML header
+            f1.write('<?xml version="1.0" encoding="utf-8"?>\n')
+            f1.write("<ImageData>\n")
+            f1.write("  <GlobalCoordinates>1</GlobalCoordinates>\n")
+
+            # Write calibration points
+            for cal_idx, (x_um, y_um) in enumerate(calibration_points):
+                f1.write(
+                    f"  <X_CalibrationPoint_{cal_idx + 1}>{x_um}</X_CalibrationPoint_{cal_idx + 1}>\n"
+                )
+                f1.write(
+                    f"  <Y_CalibrationPoint_{cal_idx + 1}>{y_um}</Y_CalibrationPoint_{cal_idx + 1}>\n"
+                )
+
+            # Write ShapeCount
+            f1.write(f"  <ShapeCount>{num_shapes}</ShapeCount>\n")
+
+            # Write shapes
+            for shape_data in valid_shapes:
+                shape_num = shape_data["shape_num"]
+                points = shape_data["points"]
+
+                f1.write(f"  <Shape_{shape_num}>\n")
+                f1.write(f"    <PointCount>{len(points)}</PointCount>\n")
+
+                for point_idx, (x_um, y_um) in enumerate(points):
                     f1.write(f"    <X_{point_idx + 1}>{x_um}</X_{point_idx + 1}>\n")
                     f1.write(f"    <Y_{point_idx + 1}>{y_um}</Y_{point_idx + 1}>\n")
 
-                # Close shape
                 f1.write(f"  </Shape_{shape_num}>\n")
 
             # Close XML
