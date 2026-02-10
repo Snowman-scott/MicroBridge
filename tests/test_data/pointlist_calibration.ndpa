@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<annotations>
+  <!-- Calibration Point 1 - Freehand (pointlist fallback path) -->
+  <ndpviewstate id="1">
+    <title>Calibration_1</title>
+    <annotation type="freehand">
+      <pointlist>
+        <point>
+          <x>100000000</x>
+          <y>200000000</y>
+        </point>
+      </pointlist>
+    </annotation>
+  </ndpviewstate>
+
+  <!-- Calibration Point 2 - Freehand (pointlist fallback path) -->
+  <ndpviewstate id="2">
+    <title>Calibration_2</title>
+    <annotation type="freehand">
+      <pointlist>
+        <point>
+          <x>150000000</x>
+          <y>250000000</y>
+        </point>
+      </pointlist>
+    </annotation>
+  </ndpviewstate>
+
+  <!-- Calibration Point 3 - Freehand (pointlist fallback path) -->
+  <ndpviewstate id="3">
+    <title>Calibration_3</title>
+    <annotation type="freehand">
+      <pointlist>
+        <point>
+          <x>200000000</x>
+          <y>300000000</y>
+        </point>
+      </pointlist>
+    </annotation>
+  </ndpviewstate>
+
+  <!-- Capture Shape 1 -->
+  <ndpviewstate id="4">
+    <title>ROI_1</title>
+    <annotation type="freehand">
+      <pointlist>
+        <point>
+          <x>300000000</x>
+          <y>400000000</y>
+        </point>
+        <point>
+          <x>350000000</x>
+          <y>450000000</y>
+        </point>
+      </pointlist>
+    </annotation>
+  </ndpviewstate>
+</annotations>

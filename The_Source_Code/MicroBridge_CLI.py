@@ -163,18 +163,29 @@ def convert_ndpa_to_lmd(
             calibration_points.append((x_um, y_um))
 
         # Collect valid shapes (regions with points)
+        # Skip ruler/linear measure annotations - they are measurement tools, not capture regions
         valid_shapes = []
+        shape_num = 0  # Track shape numbering independently
         for shape_idx in range(3, len(regions)):
             region = regions[shape_idx]
-            shape_num = shape_idx - 2  # Shape numbering starts at 1
 
             # Get region title
             title_elem = region.getElementsByTagName("title")
             title = (
                 title_elem[0].firstChild.data  # type: ignore[attr-defined]
                 if title_elem and title_elem[0].firstChild
-                else f"Shape_{shape_num}"
+                else f"Shape_{shape_num + 1}"
             )
+
+            # Skip ruler annotations (linearmeasure type)
+            annotations = region.getElementsByTagName("annotation")
+            if annotations:
+                ann_type = annotations[0].getAttribute("type")
+                if ann_type == "linearmeasure":
+                    print(f"  Skipping ruler annotation: '{title}'")
+                    continue
+
+            shape_num += 1
 
             # Get all points in this region
             pointlist = region.getElementsByTagName("point")

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Unit tests for MicroBridge conversion functions.
+Unit tests for MicroBridge CLI conversion functions.
 
 Run with: python -m unittest tests/test_conversion.py
 Or: python tests/test_conversion.py
@@ -15,7 +15,10 @@ from xml.dom import minidom
 
 # Add parent directory to path to import MicroBridge modules
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "The_Source_Code"))
-from MicroBridge_CLI import convert_ndpa_to_lmd  # type: ignore[import]
+from MicroBridge_CLI import (  # type: ignore[import]
+    batch_convert_directory,
+    convert_ndpa_to_lmd,
+)
 
 
 class TestNDPAConversion(unittest.TestCase):
@@ -301,24 +304,193 @@ class TestNDPAConversion(unittest.TestCase):
             "Output file should be created with _LMD.xml suffix",
         )
 
+    # --- New tests: ruler skipping ---
 
-class TestCSVConversion(unittest.TestCase):
-    """Test CSV to LMD XML conversion"""
+    def test_ruler_annotation_skipped(self):
+        """Test that ruler (linearmeasure) annotations are skipped during conversion"""
+        input_file = os.path.join(self.test_data_dir, "ruler_sample.ndpa")
+        output_file = os.path.join(self.temp_dir, "ruler_test_LMD.xml")
+
+        result = convert_ndpa_to_lmd(input_file, output_file)
+        self.assertTrue(result, "Conversion should succeed")
+
+        with open(output_file, "r", encoding="utf-8") as f:
+            dom = minidom.parse(f)
+
+        # Should have 2 shapes (ruler skipped)
+        shape_count = int(
+            getattr(dom.getElementsByTagName("ShapeCount")[0].firstChild, "data")
+        )
+        self.assertEqual(shape_count, 2, "ShapeCount should be 2 (ruler skipped)")
+
+        # Verify shape numbering is sequential (1, 2 - no gaps)
+        self.assertEqual(len(dom.getElementsByTagName("Shape_1")), 1)
+        self.assertEqual(len(dom.getElementsByTagName("Shape_2")), 1)
+
+    def test_multiple_rulers_skipped(self):
+        """Test that multiple rulers interleaved with shapes are all skipped"""
+        input_file = os.path.join(self.test_data_dir, "mixed_annotations.ndpa")
+        output_file = os.path.join(self.temp_dir, "mixed_test_LMD.xml")
+
+        result = convert_ndpa_to_lmd(input_file, output_file)
+        self.assertTrue(result, "Conversion should succeed")
+
+        with open(output_file, "r", encoding="utf-8") as f:
+            dom = minidom.parse(f)
+
+        # Should have 2 shapes (both rulers skipped)
+        shape_count = int(
+            getattr(dom.getElementsByTagName("ShapeCount")[0].firstChild, "data")
+        )
+        self.assertEqual(shape_count, 2, "ShapeCount should be 2 (both rulers skipped)")
+
+        # Verify sequential numbering
+        self.assertEqual(len(dom.getElementsByTagName("Shape_1")), 1)
+        self.assertEqual(len(dom.getElementsByTagName("Shape_2")), 1)
+
+    def test_ruler_only_shapes_produces_zero_shapes(self):
+        """Test that a file with only rulers (no real shapes) produces zero shapes"""
+        ruler_only_file = os.path.join(self.temp_dir, "ruler_only.ndpa")
+        with open(ruler_only_file, "w", encoding="utf-8") as f:
+            f.write("""<?xml version="1.0" encoding="utf-8"?>
+<annotations>
+  <ndpviewstate id="1">
+    <title>Cal_1</title>
+    <annotation type="circle"><x>100000000</x><y>200000000</y></annotation>
+  </ndpviewstate>
+  <ndpviewstate id="2">
+    <title>Cal_2</title>
+    <annotation type="circle"><x>150000000</x><y>250000000</y></annotation>
+  </ndpviewstate>
+  <ndpviewstate id="3">
+    <title>Cal_3</title>
+    <annotation type="circle"><x>200000000</x><y>300000000</y></annotation>
+  </ndpviewstate>
+  <ndpviewstate id="4">
+    <title>Ruler_1</title>
+    <annotation type="linearmeasure"><x1>100000000</x1><y1>100000000</y1><x2>200000000</x2><y2>200000000</y2></annotation>
+  </ndpviewstate>
+</annotations>""")
+
+        output_file = os.path.join(self.temp_dir, "ruler_only_LMD.xml")
+        result = convert_ndpa_to_lmd(ruler_only_file, output_file)
+        self.assertTrue(result, "Conversion should succeed even with zero shapes")
+
+        with open(output_file, "r", encoding="utf-8") as f:
+            dom = minidom.parse(f)
+
+        shape_count = int(
+            getattr(dom.getElementsByTagName("ShapeCount")[0].firstChild, "data")
+        )
+        self.assertEqual(shape_count, 0, "ShapeCount should be 0")
+
+    # --- New tests: pointlist fallback ---
+
+    def test_pointlist_calibration_fallback(self):
+        """Test calibration point extraction via pointlist fallback path"""
+        input_file = os.path.join(self.test_data_dir, "pointlist_calibration.ndpa")
+        output_file = os.path.join(self.temp_dir, "pointlist_cal_LMD.xml")
+
+        result = convert_ndpa_to_lmd(input_file, output_file)
+        self.assertTrue(result, "Conversion should succeed with pointlist calibration")
+
+        with open(output_file, "r", encoding="utf-8") as f:
+            dom = minidom.parse(f)
+
+        # Verify calibration values (100000000 nm / 1000 = 100000 um)
+        calib1_x = getattr(
+            dom.getElementsByTagName("X_CalibrationPoint_1")[0].firstChild, "data"
+        )
+        calib1_y = getattr(
+            dom.getElementsByTagName("Y_CalibrationPoint_1")[0].firstChild, "data"
+        )
+        self.assertEqual(calib1_x, "100000")
+        self.assertEqual(calib1_y, "200000")
+
+    # --- New tests: edge cases ---
+
+    def test_empty_annotation_file(self):
+        """Test that an empty annotations file fails gracefully"""
+        empty_file = os.path.join(self.temp_dir, "empty.ndpa")
+        with open(empty_file, "w", encoding="utf-8") as f:
+            f.write(
+                '<?xml version="1.0" encoding="utf-8"?>\n<annotations>\n</annotations>'
+            )
+
+        output_file = os.path.join(self.temp_dir, "empty_LMD.xml")
+        result = convert_ndpa_to_lmd(empty_file, output_file)
+        self.assertFalse(result, "Should fail with no regions")
+
+
+class TestBatchConversion(unittest.TestCase):
+    """Test batch directory conversion"""
 
     def setUp(self):
-        """Set up test fixtures"""
-        self.test_data_dir = os.path.join(os.path.dirname(__file__), "test_data")
         self.temp_dir = tempfile.mkdtemp()
+        self.test_data_dir = os.path.join(os.path.dirname(__file__), "test_data")
 
     def tearDown(self):
-        """Clean up temporary files"""
         if os.path.exists(self.temp_dir):
             shutil.rmtree(self.temp_dir)
 
+    def _copy_valid_sample(self, name):
+        """Copy valid_sample.ndpa to temp_dir with a given name"""
+        src = os.path.join(self.test_data_dir, "valid_sample.ndpa")
+        dst = os.path.join(self.temp_dir, name)
+        shutil.copy(src, dst)
+        return dst
+
+    def test_batch_convert_directory(self):
+        """Test batch conversion of a directory with multiple valid files"""
+        self._copy_valid_sample("file1.ndpa")
+        self._copy_valid_sample("file2.ndpa")
+
+        result = batch_convert_directory(self.temp_dir, allow_missing_calibration=True)
+        self.assertEqual(result, 2, "Should convert 2 files successfully")
+
+        # Verify output files exist
+        self.assertTrue(os.path.exists(os.path.join(self.temp_dir, "file1_LMD.xml")))
+        self.assertTrue(os.path.exists(os.path.join(self.temp_dir, "file2_LMD.xml")))
+
+    def test_batch_convert_empty_directory(self):
+        """Test batch conversion of an empty directory"""
+        result = batch_convert_directory(self.temp_dir)
+        self.assertEqual(result, 0, "Should return 0 for empty directory")
+
+    def test_batch_convert_mixed_valid_invalid(self):
+        """Test batch conversion with a mix of valid and invalid files"""
+        self._copy_valid_sample("valid.ndpa")
+
+        # Create an invalid NDPA file
+        invalid_file = os.path.join(self.temp_dir, "invalid.ndpa")
+        with open(invalid_file, "w", encoding="utf-8") as f:
+            f.write("Not valid XML at all")
+
+        result = batch_convert_directory(self.temp_dir, allow_missing_calibration=True)
+        self.assertEqual(result, 1, "Should convert 1 of 2 files successfully")
+
+    def test_batch_convert_ignores_non_ndpa(self):
+        """Test that batch conversion ignores non-.ndpa files"""
+        self._copy_valid_sample("real.ndpa")
+
+        # Create non-ndpa files that should be ignored
+        for name in ["readme.txt", "data.csv", "notes.md"]:
+            with open(os.path.join(self.temp_dir, name), "w") as f:
+                f.write("not an ndpa file")
+
+        result = batch_convert_directory(self.temp_dir, allow_missing_calibration=True)
+        self.assertEqual(result, 1, "Should only convert the .ndpa file")
+
+        # Only one _LMD.xml should exist
+        lmd_files = [f for f in os.listdir(self.temp_dir) if f.endswith("_LMD.xml")]
+        self.assertEqual(len(lmd_files), 1)
+
+
+class TestCSVConversion(unittest.TestCase):
+    """Placeholder: CSV conversion is GUI-only. See test_csv_conversion.py."""
+
+    @unittest.skip("CSV conversion is GUI-only; see tests/test_csv_conversion.py")
     def test_csv_basic_structure(self):
-        """Test that CSV conversion creates valid LMD XML structure"""
-        # Note: CSV conversion would need to be implemented separately
-        # This is a placeholder for when CSV conversion is added to CLI
         pass
 
 
@@ -330,6 +502,7 @@ def run_tests():
 
     # Add all test cases
     suite.addTests(loader.loadTestsFromTestCase(TestNDPAConversion))
+    suite.addTests(loader.loadTestsFromTestCase(TestBatchConversion))
     suite.addTests(loader.loadTestsFromTestCase(TestCSVConversion))
 
     # Run tests
