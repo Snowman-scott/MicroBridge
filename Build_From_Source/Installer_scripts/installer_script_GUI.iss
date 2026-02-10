@@ -2,7 +2,7 @@
 ; Save this as "installer_script_GUI.iss"
 
 #define MyAppName "MicroBridge"
-#define MyAppVersion "0.1.1"
+#define MyAppVersion "0.1.1.1"
 #define MyAppPublisher "Rose Scott"
 #define MyAppExeName "MicroBridge.exe"
 #define MyAppURL "https://github.com/Snowman-scott/MicroBridge"

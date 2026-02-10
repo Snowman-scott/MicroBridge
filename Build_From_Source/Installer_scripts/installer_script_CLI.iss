@@ -2,7 +2,7 @@
 ; Save this as "installer_cli.iss"
 
 #define MyAppName "MicroBridge CLI"
-#define MyAppVersion "0.1.1"
+#define MyAppVersion "0.1.1.1"
 #define MyAppPublisher "Rose Scott"
 #define MyAppExeName "MicroBridge_CLI.exe"
 

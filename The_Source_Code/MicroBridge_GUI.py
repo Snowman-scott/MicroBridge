@@ -685,17 +685,28 @@ class MicroBridgeConverterApp:
                     )
 
                 # First pass: collect valid shapes (regions with pointlists and points)
+                # Skip ruler/linear measure annotations - they are measurement tools, not capture regions
                 valid_shapes = []
+                shape_num = 0
                 for si in range(3, len(regions)):
                     region = regions[si]
-                    shape_num = si - 2
 
                     title_elem = region.getElementsByTagName("title")
                     title = (
                         self._get_element_text(title_elem[0])
                         if title_elem
-                        else "Shape_{}".format(shape_num)
+                        else "Shape_{}".format(shape_num + 1)
                     )
+
+                    # Skip ruler annotations (linearmeasure type)
+                    annotations = region.getElementsByTagName("annotation")
+                    if annotations:
+                        ann_type = annotations[0].getAttribute("type")
+                        if ann_type == "linearmeasure":
+                            self._enqueue_log(
+                                "  Skipping ruler annotation: '{}'".format(title)
+                            )
+                            continue
 
                     # For freehand shapes, look for pointlist > point
                     pointlists = region.getElementsByTagName("pointlist")
@@ -706,6 +717,7 @@ class MicroBridgeConverterApp:
                     if not pts:
                         continue
 
+                    shape_num += 1
                     valid_shapes.append(
                         {"shape_num": shape_num, "title": title, "pts": pts}
                     )

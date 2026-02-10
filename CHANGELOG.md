@@ -2,6 +2,46 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Version 1.1.1] - 2026-02-10
+
+### New Features
+
+#### Ruler Annotation Skipping
+- **Both CLI and GUI now automatically skip ruler annotations** (`type="linearmeasure"`) during conversion
+- Ruler/measurement annotations from NDP.view2 are not capture regions and were previously causing issues when mixed with shapes
+- Rulers are detected and logged (e.g. `Skipping ruler annotation: '3_ruler'`) so users know they were found and ignored
+- Shape numbering remains sequential with no gaps when rulers are present
+- Works with any number of rulers interleaved with shapes
+
+#### Comprehensive Automated Test Suite
+- **Expanded from 9 tests to 43 tests** across 3 test files:
+  - `test_conversion.py` (18 tests) -- CLI NDPA conversion and batch processing
+  - `test_gui_conversion.py` (13 tests) -- GUI NDPA conversion, headless (no window needed)
+  - `test_csv_conversion.py` (12 tests) -- GUI CSV conversion
+- **GUI tests run without a display** -- tkinter is mocked at import time, allowing tests to run in CI environments with no display server
+- New test coverage includes: ruler skipping, batch conversion, pointlist calibration fallback, edge cases (empty files, missing columns, non-numeric data, float rounding)
+- 3 new test data files: `ruler_sample.ndpa`, `pointlist_calibration.ndpa`, `mixed_annotations.ndpa`
+
+#### GitHub Actions CI Pipeline
+- **Automated testing on every push and pull request** via `.github/workflows/tests.yml`
+- Runs across **3 operating systems** (Ubuntu, Windows, macOS) and **5 Python versions** (3.9-3.13) = 15 combinations
+- No external dependencies needed -- uses only the Python standard library
+- Tests are discovered automatically, so new test files are picked up with no workflow changes
+
+### Bug Fixes
+
+#### Fixed Windows CI Test Failures
+- **Root cause**: Unicode characters in print/log statements caused `UnicodeEncodeError` on Windows GitHub Actions runners where Python falls back to `cp1252` encoding
+- **Fix 1**: Added `sys.stdout.reconfigure(encoding="utf-8")` to `MicroBridge_CLI.py`
+- **Fix 2**: Added `PYTHONIOENCODING: utf-8` environment variable to the GitHub Actions workflow
+
+### Documentation
+- Updated main README: added ruler skipping to Features list and Annotation Requirements section
+- Removed "Automated testing with GitHub Actions" from Roadmap (now implemented)
+- Rewrote `tests/README.md` with full documentation covering all 43 tests, headless GUI architecture, and CI info
+
+---
+
 ## [Version 0.1.1] - 2026-01-14
 
 ### 🔧 Critical Fixes
@@ -154,6 +194,14 @@ All notable changes to this project will be documented in this file.
 ---
 
 ## Upgrade Notes
+
+### From 0.1.1 / V1.1 to V1.1.1
+
+**No action required** - Simply install the new version. All existing workflows will continue to function.
+
+**Ruler annotations**: If your NDPA files contain ruler/measurement annotations, they will now be cleanly skipped instead of potentially causing empty shapes or numbering issues. No changes needed to your annotation files.
+
+**CI**: Full automated test suite now runs on push. Windows encoding issues resolved.
 
 ### From 0.1.0 to 0.1.1
 

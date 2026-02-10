@@ -4,6 +4,18 @@ import traceback
 from xml.dom import minidom
 from xml.parsers.expat import ExpatError
 
+# Ensure stdout can handle Unicode on all platforms (e.g. Windows cp1252 terminals)
+if sys.stdout and hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+if sys.stderr and hasattr(sys.stderr, "reconfigure"):
+    try:
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 
 def convert_ndpa_to_lmd(
     input_filename, output_filename=None, allow_missing_calibration=False
@@ -163,18 +175,29 @@ def convert_ndpa_to_lmd(
             calibration_points.append((x_um, y_um))
 
         # Collect valid shapes (regions with points)
+        # Skip ruler/linear measure annotations - they are measurement tools, not capture regions
         valid_shapes = []
+        shape_num = 0  # Track shape numbering independently
         for shape_idx in range(3, len(regions)):
             region = regions[shape_idx]
-            shape_num = shape_idx - 2  # Shape numbering starts at 1
 
             # Get region title
             title_elem = region.getElementsByTagName("title")
             title = (
                 title_elem[0].firstChild.data  # type: ignore[attr-defined]
                 if title_elem and title_elem[0].firstChild
-                else f"Shape_{shape_num}"
+                else f"Shape_{shape_num + 1}"
             )
+
+            # Skip ruler annotations (linearmeasure type)
+            annotations = region.getElementsByTagName("annotation")
+            if annotations:
+                ann_type = annotations[0].getAttribute("type")
+                if ann_type == "linearmeasure":
+                    print(f"  Skipping ruler annotation: '{title}'")
+                    continue
+
+            shape_num += 1
 
             # Get all points in this region
             pointlist = region.getElementsByTagName("point")
