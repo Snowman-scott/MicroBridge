@@ -12,6 +12,7 @@ Researchers annotate regions of interest in NDP.view2 and need to transfer those
 - **Batch Processing** - Convert entire folders at once
 - **Multiple Formats** - Supports NDPA and CSV input files
 - **Pre-flight Validation** - Catches errors before conversion starts
+- **Ruler Skipping** - Ruler/measurement annotations are automatically ignored
 - **Robust Error Handling** - Clear messages with actionable solutions
 
 ## Download
@@ -43,6 +44,8 @@ Your annotation files must follow this structure:
 
 Minimum 3 regions required. Both circle and freehand annotations work as calibration points.
 
+Ruler annotations (linear measurements) are automatically skipped during conversion -- they won't affect your output or shape numbering.
+
 ## Troubleshooting
 
 | Error | Solution |
@@ -56,7 +59,6 @@ Minimum 3 regions required. Both circle and freehand annotations work as calibra
 
 **Planned**
 - Context menu for file list (right-click to remove, open location)
-- Automated testing with GitHub Actions
 
 **Under Consideration**
 - Additional annotation format support
