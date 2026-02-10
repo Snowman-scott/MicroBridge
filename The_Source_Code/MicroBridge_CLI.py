@@ -4,6 +4,18 @@ import traceback
 from xml.dom import minidom
 from xml.parsers.expat import ExpatError
 
+# Ensure stdout can handle Unicode on all platforms (e.g. Windows cp1252 terminals)
+if sys.stdout and hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+if sys.stderr and hasattr(sys.stderr, "reconfigure"):
+    try:
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 
 def convert_ndpa_to_lmd(
     input_filename, output_filename=None, allow_missing_calibration=False

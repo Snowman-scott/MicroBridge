@@ -181,8 +181,8 @@ MicroBridge/
 
 ### Installer Outputs
 
-- **GUI**: `MicroBridge_Setup_v0.1.1.exe`
-- **CLI**: `MicroBridge_CLI_Setup_v0.1.1.exe`
+- **GUI**: `MicroBridge_Setup_v0.1.1.1.exe`
+- **CLI**: `MicroBridge_CLI_Setup_v0.1.1.1.exe`
 
 Both installers will be in: `Installer_scripts/installer_output/`
 
@@ -198,7 +198,7 @@ Create a build script to automate the entire process:
 ```batch
 @echo off
 echo ========================================
-echo Building MicroBridge v0.1.1
+echo Building MicroBridge v0.1.1.1
 echo ========================================
 
 echo.
@@ -235,8 +235,8 @@ echo Build complete!
 echo ========================================
 echo.
 echo Installers created in: Installer_scripts\installer_output\
-echo   - MicroBridge_Setup_v0.1.1.exe (GUI)
-echo   - MicroBridge_CLI_Setup_v0.1.1.exe (CLI)
+echo   - MicroBridge_Setup_v0.1.1.1.exe (GUI)
+echo   - MicroBridge_CLI_Setup_v0.1.1.1.exe (CLI)
 echo.
 pause
 ```
@@ -457,4 +457,4 @@ If you encounter build issues:
 ---
 
 **Last Updated:** 2026-01-09  
-**MicroBridge Version:** 0.1.1
+**MicroBridge Version:** 0.1.1.1

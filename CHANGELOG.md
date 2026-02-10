@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Version 0.1.1.1] - 2026-02-10
+
+### Bug Fixes
+
+#### Fixed Windows CI Test Failures
+- **Root cause**: Unicode characters (`✓`, `✗`, `⚠️`, `🚀`, `🗑️`) in print/log statements caused `UnicodeEncodeError` on Windows GitHub Actions runners, where Python falls back to `cp1252` encoding instead of UTF-8
+- **Fix 1**: Added `sys.stdout.reconfigure(encoding="utf-8")` to `MicroBridge_CLI.py` so the CLI works on any Windows terminal regardless of locale
+- **Fix 2**: Added `PYTHONIOENCODING: utf-8` environment variable to the GitHub Actions workflow as a safety net
+- All 15 CI jobs (5 Windows + 5 macOS + 5 Ubuntu) now pass across Python 3.9-3.13
+
+---
+
 ## [Version 0.1.1] - 2026-01-14
 
 ### 🔧 Critical Fixes
@@ -154,6 +166,12 @@ All notable changes to this project will be documented in this file.
 ---
 
 ## Upgrade Notes
+
+### From 0.1.1 to 0.1.1.1
+
+**No action required** - Simply install the new version. All existing workflows will continue to function.
+
+**CI fix**: Windows GitHub Actions tests now pass. No changes to conversion logic.
 
 ### From 0.1.0 to 0.1.1
 

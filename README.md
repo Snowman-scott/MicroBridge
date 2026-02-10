@@ -16,7 +16,7 @@ Researchers annotate regions of interest in NDP.view2 and need to transfer those
 
 ## Download
 
-**[Latest Release (v0.1.1)](https://github.com/Snowman-scott/MicroBridge/releases/latest)**
+**[Latest Release (v0.1.1.1)](https://github.com/Snowman-scott/MicroBridge/releases/latest)**
 
 - `MicroBridge_GUI.zip` - Graphical interface
 - `MicroBridge_CLI.zip` - Command-line tool
