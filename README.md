@@ -6,6 +6,13 @@ A conversion tool that bridges Hamamatsu's NDP.view2 digital slide annotation sy
 
 Researchers annotate regions of interest in NDP.view2 and need to transfer those annotations to LMD systems for laser microdissection. MicroBridge automates this conversion, handling coordinate transformation, calibration point extraction, and batch processing.
 
+## License
+
+This project is licensed under the **PolyForm Noncommercial License 1.0.0**. 
+You are free to use, modify, and distribute this software for non-commercial purposes (such as personal use, academic research, and non-profit labs). 
+
+For commercial or institutional licensing inquiries, please contact me.
+
 ## Features
 
 - **GUI & CLI** - Graphical interface for interactive use, command-line for scripting
@@ -82,4 +89,3 @@ MIT License - See [LICENSE](LICENSE)
 Rose Scott ([@Snowman-scott](https://github.com/Snowman-scott))
 
 Found a bug? [Open an issue](https://github.com/Snowman-scott/MicroBridge/issues)
-
