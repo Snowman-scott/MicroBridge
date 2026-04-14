@@ -9,6 +9,8 @@ build/
 
 # Python
 The_Source_Code/__pycache__/
+The_Source_Code/MicroBridge_CLI.py
+The_Source_Code/MicroBridge_GUI.py
 __pycache__/
 *.py[cod]
 *$py.class
@@ -32,6 +34,7 @@ examples/
 example_annotations/
 
 # IDE and editor files
+Mission_Notes.md
 .vscode/
 .idea/
 *.swp
