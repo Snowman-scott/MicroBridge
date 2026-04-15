@@ -79,7 +79,7 @@ Ruler annotations (linear measurements) are automatically skipped during convers
 This project started from a real need in digital pathology workflow. I wrote a simple proof-of-concept script to convert NDP.view2 annotations to LMD format, and it worked well enough for basic use. From there, I expanded the functionality, added the GUI for easier batch processing, and used AI assistance to polish the code, implement new features, and fix things I didn't know how to do myself.
 
 It's been a practical learning experience - combining domain knowledge from my work with modern AI tools to build something genuinely useful.
-
+
 ## Author
 
 Rose Scott ([@Snowman-scott](https://github.com/Snowman-scott))
