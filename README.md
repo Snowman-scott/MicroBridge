@@ -6,12 +6,13 @@ A conversion tool that bridges Hamamatsu's NDP.view2 digital slide annotation sy
 
 Researchers annotate regions of interest in NDP.view2 and need to transfer those annotations to LMD systems for laser microdissection. MicroBridge automates this conversion, handling coordinate transformation, calibration point extraction, and batch processing.
 
-## License
-
-This project is licensed under the **PolyForm Noncommercial License 1.0.0**. 
-You are free to use, modify, and distribute this software for non-commercial purposes (such as personal use, academic research, and non-profit labs). 
-
-For commercial or institutional licensing inquiries, please contact me.
+---
+## 🚀 What's New in v1.2.0
+We've completely overhauled the engine to be more robust and easier to use:
+- **Unified Binary**: One executable for everything. Double-click for the GUI, or use `--cli` in a terminal.
+- **Cross-Platform Verified**: Automatically tested on **Windows, macOS, and Linux (Debian, Arch, Fedora)**.
+- **Python 3.14 Ready**: Support for the latest Python environments.
+- **Smart Filtering**: "Ruler" measurements are now automatically ignored so they don't mess up your laser shapes.
 
 ## Features
 
@@ -24,21 +25,33 @@ For commercial or institutional licensing inquiries, please contact me.
 
 ## Download
 
-**[Latest Release (v0.1.1.1)](https://github.com/Snowman-scott/MicroBridge/releases/latest)**
+**[Latest Release (v1.2.0)](https://github.com/Snowman-scott/MicroBridge/releases/latest)**
 
-- `MicroBridge_GUI.zip` - Graphical interface
-- `MicroBridge_CLI.zip` - Command-line tool
+- `MicroBridge.zip` - Graphical interface & CLI Tool (More info below)
+
+## Running MicroBridge in its 2 different modes
+When users want to use the **Graphical user interface**: \
+All you have to do is run the `MicroBridge.exe` file Normally Via Double clicking the icon
+\ When you want to use the **CLI Tool**: \
+Open terminal, wherever the `MicroBridge.exe` and Run \
+```
+MicroBridge.exe --cli
+```
 
 ## Run from Source
 
-Requires Python 3.x (standard library only - no dependencies).
+Requires Python 3.9 - 3.14 (standard library only - no dependencies).
 
 ```bash
-python The_Source_Code/MicroBridge_GUI.py
-python The_Source_Code/MicroBridge_CLI.py [files...]
+python The_Source_Code/MicroBridge.py
+# Or for the CLI 
+python The_Source_Code/MicroBridge.py --cli
 ```
 
 For building executables, see [BUILD_INSTRUCTIONS.md](Build_From_Source/BUILD_INSTRUCTIONS.md).
+
+## Workflow
+**NDPI -> NDPA (Annotation file) -> MicroBridge -> LMD XML**
 
 ## Annotation Requirements
 
@@ -49,7 +62,7 @@ Your annotation files must follow this structure:
 | 1-3 | **Calibration Points** - Circle or freehand annotations |
 | 4+ | **Capture Shapes** - Regions for microdissection |
 
-Minimum 3 regions required. Both circle and freehand annotations work as calibration points.
+Minimum 3 regions required. Both circle and freehand annotations work as calibration points. **But Circle annotations are preferred**
 
 Ruler annotations (linear measurements) are automatically skipped during conversion -- they won't affect your output or shape numbering.
 
@@ -65,20 +78,23 @@ Ruler annotations (linear measurements) are automatically skipped during convers
 ## Roadmap
 
 **Planned**
-- Context menu for file list (right-click to remove, open location)
+- macOS and Linux native packages
+- Xenium annotation conversion Support
+- Omero support
 
 **Under Consideration**
-- Additional annotation format support
-- macOS/Linux installers
-- Drag-and-drop in GUI
-- Recent files list
-- Batch operation presets
+- Images, and gifs in README.md
+- Add a Basic QuickStart Guide
 
 ## Development Story
 
 This project started from a real need in digital pathology workflow. I wrote a simple proof-of-concept script to convert NDP.view2 annotations to LMD format, and it worked well enough for basic use. From there, I expanded the functionality, added the GUI for easier batch processing, and used AI assistance to polish the code, implement new features, and fix things I didn't know how to do myself.
 
 It's been a practical learning experience - combining domain knowledge from my work with modern AI tools to build something genuinely useful.
+
+## License
+
+This project is Licensed under The **GNU GENERAL PUBLIC LICENSE V3** (GPL-3.0)
 
 ## Author
 
