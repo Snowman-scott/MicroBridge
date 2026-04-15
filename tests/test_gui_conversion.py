@@ -86,7 +86,7 @@ sys.modules["tkinter"] = _mock_tk
 
 # Now safe to import
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "The_Source_Code"))
-from MicroBridge_GUI import MicroBridgeConverterApp  # type: ignore[import]
+from MicroBridge import MicroBridgeConverterApp  # type: ignore[import]
 
 
 def _make_headless_app(output_folder=""):
