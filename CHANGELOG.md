@@ -2,6 +2,35 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Version 1.2.0] - 2026-04-15
+### 🏗️ Major Architectural Unification
+- **Single-Source Core:** Merged the CLi and GUI versions into one unified file
+- **Dual-Mode Entry point:** Added a launch flag for terminal users to bulk convert files.
+  - **GUI Mode:** Default, Just open the app / Desktop Use.
+  - **CLI Mode:** Activated Via the ```--cli``` flag for headless autonomation scripting, or bulk converting
+- **Smart Argument Handling:** Added support for "Drag-and-drop" execution, where files dropped onto the executable are automatically processed via the CLI engine.
+
+### 🧪 Advanced Quality Assurance (Improved CI/CD & Workflows)
+- **Cross-platform Pipeline:** Integrated Github Actions and Gitlab CI/CD to verify builds across **Windows, macOS, and Linux.**
+- Linux Distro Validation**: Added specific Dockerized testing for **Debian, Arch, and Fedora** to ensure compatibility with diverse research environments.
+-   **Headless GUI Testing**: Implemented a mocked Tkinter layer, allowing the full suite of GUI logic tests to run on servers without a physical display.
+-   **Regression Safeguards**: Automated the conversion of real-world `.ndpa` samples against "Ground Truth" LMD XMLs during every build.
+
+### 🛠️ Build & Developer Experience
+*   **Unified Build Pipeline**: Replaced fragmented build scripts with a single `build_windows.bat` that enforces a "Test-Before-Build" policy.
+-   **Enhanced CLI Flags**:
+    -   `--cli`: Explicitly triggers command-line operation.
+    -   `--force`: Allows conversion to proceed with placeholder coordinates if calibration points are missing (use with caution).
+-   **Workspace Sanitization**: Automated cleaning of `build/` and `dist/` directories to prevent artifact corruption between versions.
+- **Updated Build Docs:** Made the build docks match the unified file build rather than 2 seperate files
+
+#### 🐛 Bug Fixes & Refinements
+-   Fixed a path-handling bug where mixed slashes (`/` vs `\`) could cause failures on non-Windows systems.
+-   Improved XML element text extraction to prevent `AttributeError` when encountering empty or malformed nodes.
+-   Enhanced the "Ruler" detection logic to more reliably filter measurement annotations from laser-cutting shapes.
+
+---
+
 ## [Version 1.1.1] - 2026-02-10
 
 ### New Features
@@ -208,5 +237,3 @@ All notable changes to this project will be documented in this file.
 **No action required** - Simply install the new version. All existing workflows will continue to function.
 
 **Improved compatibility**: If you previously experienced different results between CLI and GUI for the same NDPA file, this has been resolved in v0.1.1.
-
-

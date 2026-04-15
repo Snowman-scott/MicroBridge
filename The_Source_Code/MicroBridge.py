@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-MicroBridge - Gui_Convertor.py
+MicroBridge.py
 
 Thread-safe GUI for converting Hamamatsu NDP (.ndpa) and CSV annotations into a
 simplified LMD-compatible XML. This file is a cleaned implementation that:
@@ -18,7 +18,7 @@ import queue
 import sys
 import threading
 import tkinter as tk
-from this import s
+import traceback
 from tkinter import filedialog, messagebox, scrolledtext, ttk
 from xml.dom import minidom
 from xml.parsers.expat import ExpatError
@@ -27,6 +27,376 @@ from xml.parsers.expat import ExpatError
 WINDOW_TITLE = "MicroBridge - NDP/CSV to LMD Converter"
 DEFAULT_OUTPUT_EXT = ".xml"
 QUEUE_POLL_MS = 100
+
+
+def convert_ndpa_to_lmd(
+    input_filename, output_filename=None, allow_missing_calibration=False, log_fn=print
+):
+    """
+    Convert NDP.view2 annotation file (.ndpa) to LMD-compatible XML format.
+
+    Args:
+        input_filename: Path to the .ndpa XML file
+        output_filename: Optional output filename. If not provided, will use input name with '_LMD.xml'
+        allow_missing_calibration: If False, conversion fails when calibration points are missing.
+                                   If True, writes placeholder (0,0) coordinates with warning.
+
+    Returns:
+        True if successful, False otherwise
+    """
+
+    try:
+        # Check if input file exists
+        if not os.path.exists(input_filename):
+            log_fn(f"ERROR: Input file not found: {input_filename}")
+            return False
+
+        # Generate output filename if not provided
+        if output_filename is None:
+            base_name = os.path.splitext(input_filename)[0]
+            output_filename = f"{base_name}_LMD.xml"
+
+        log_fn(f"Reading: {input_filename}")
+
+        # Parse the NDP.view2 XML file
+        with open(input_filename, "r", encoding="utf-8") as file:
+            ndpa_xml = minidom.parse(file)
+
+        # Get all ndpviewstate elements (regions)
+        regions = ndpa_xml.getElementsByTagName("ndpviewstate")
+
+        log_fn(f"Found {len(regions)} regions in the file")
+
+        if len(regions) < 4:
+            log_fn(
+                f"WARNING: Found only {len(regions)} regions. Need at least 4 (3 calibration + 1 shape)"
+            )
+            if len(regions) < 3:
+                log_fn("ERROR: Need at least 3 regions for calibration points!")
+                return False
+            log_fn("Proceeding with available regions...")
+
+        log_fn("\nProcessing calibration points...")
+
+        # First pass: validate and collect calibration points BEFORE writing any file
+        calibration_points = []
+        for cal_idx in range(min(3, len(regions))):
+            region = regions[cal_idx]
+
+            # Get region title for debugging
+            title_elem = region.getElementsByTagName("title")
+            title = (
+                title_elem[0].firstChild.data  # type: ignore[attr-defined]
+                if title_elem and title_elem[0].firstChild
+                else "Unnamed"
+            )
+
+            # Try to get coordinates from annotation element first (circle annotations)
+            # If not found, fall back to pointlist (freehand annotations)
+            x_um = None
+            y_um = None
+
+            # Method 1: Check for annotation element (circle annotations)
+            annotations = region.getElementsByTagName("annotation")
+            if annotations:
+                annotation = annotations[0]
+                x_elems = annotation.getElementsByTagName("x")
+                y_elems = annotation.getElementsByTagName("y")
+
+                if x_elems and y_elems:
+                    try:
+                        x_nm = float(
+                            x_elems[0].firstChild.data  # type: ignore[attr-defined]
+                            if x_elems[0].firstChild
+                            else 0
+                        )
+                        y_nm = float(
+                            y_elems[0].firstChild.data  # type: ignore[attr-defined]
+                            if y_elems[0].firstChild
+                            else 0
+                        )
+                        x_um = int(round(x_nm / 1000))
+                        y_um = int(round(y_nm / 1000))
+                        log_fn(
+                            f"  Calibration Point {cal_idx + 1} ('{title}'): X={x_um} µm, Y={y_um} µm (from circle annotation)"
+                        )
+                    except (ValueError, AttributeError):
+                        pass
+
+            # Method 2: Fallback to pointlist (freehand/polygon annotations)
+            if x_um is None:
+                pointlist = region.getElementsByTagName("point")
+                if len(pointlist) > 0:
+                    try:
+                        first_point = pointlist[0]
+                        x_elem = first_point.getElementsByTagName("x")[0]
+                        y_elem = first_point.getElementsByTagName("y")[0]
+
+                        x_nm = float(
+                            x_elem.firstChild.data  # type: ignore[attr-defined]
+                            if x_elem.firstChild and hasattr(x_elem.firstChild, "data")
+                            else 0
+                        )
+                        y_nm = float(
+                            y_elem.firstChild.data  # type: ignore[attr-defined]
+                            if y_elem.firstChild and hasattr(y_elem.firstChild, "data")
+                            else 0
+                        )
+                        x_um = int(round(x_nm / 1000))
+                        y_um = int(round(y_nm / 1000))
+                        log_fn(
+                            f"  Calibration Point {cal_idx + 1} ('{title}'): X={x_um} µm, Y={y_um} µm (from pointlist)"
+                        )
+                    except (ValueError, AttributeError):
+                        pass
+
+            # If both methods failed, handle missing calibration point
+            if x_um is None:
+                log_fn(
+                    f"  ERROR: Calibration region {cal_idx + 1} ('{title}') has no valid coordinates!"
+                )
+                if not allow_missing_calibration:
+                    log_fn("\n✗ CONVERSION FAILED")
+                    log_fn(
+                        f"  Calibration point {cal_idx + 1} is missing valid coordinate data."
+                    )
+                    log_fn(
+                        "  The LMD system requires accurate calibration points to function correctly."
+                    )
+                    log_fn("\n  To fix this issue:")
+                    log_fn("    1. Open the file in NDP.view2")
+                    log_fn("    2. Ensure the first 3 regions have valid annotations")
+                    log_fn(
+                        "    3. Use circle annotations for calibration points (recommended)"
+                    )
+                    log_fn(
+                        "\n  To force conversion with placeholder (0,0) coordinates, use --force flag"
+                    )
+                    return False
+                else:
+                    # User explicitly allowed placeholder coordinates
+                    x_um = 0
+                    y_um = 0
+                    log_fn(
+                        "  WARNING: Using placeholder coordinates (0,0) - LMD system may malfunction!"
+                    )
+                    log_fn(
+                        f"  Calibration Point {cal_idx + 1} ('{title}'): X={x_um} µm, Y={y_um} µm (placeholder)"
+                    )
+
+            calibration_points.append((x_um, y_um))
+
+        # Collect valid shapes (regions with points)
+        # Skip ruler/linear measure annotations - they are measurement tools, not capture regions
+        valid_shapes = []
+        shape_num = 0  # Track shape numbering independently
+        for shape_idx in range(3, len(regions)):
+            region = regions[shape_idx]
+
+            # Get region title
+            title_elem = region.getElementsByTagName("title")
+            title = (
+                title_elem[0].firstChild.data  # type: ignore[attr-defined]
+                if title_elem and title_elem[0].firstChild
+                else f"Shape_{shape_num + 1}"
+            )
+
+            # Skip ruler annotations (linearmeasure type)
+            annotations = region.getElementsByTagName("annotation")
+            if annotations:
+                ann_type = annotations[0].getAttribute("type")
+                if ann_type == "linearmeasure":
+                    log_fn(f"  Skipping ruler annotation: '{title}'")
+                    continue
+
+            shape_num += 1
+
+            # Get all points in this region
+            pointlist = region.getElementsByTagName("point")
+            num_points = len(pointlist)
+
+            if num_points > 0:
+                # Extract all point coordinates
+                points = []
+                for point in pointlist:
+                    x_elem = point.getElementsByTagName("x")[0]
+                    y_elem = point.getElementsByTagName("y")[0]
+
+                    x_nm = float(
+                        x_elem.firstChild.data  # type: ignore[attr-defined]
+                        if x_elem.firstChild and hasattr(x_elem.firstChild, "data")
+                        else 0
+                    )
+                    y_nm = float(
+                        y_elem.firstChild.data  # type: ignore[attr-defined]
+                        if y_elem.firstChild and hasattr(y_elem.firstChild, "data")
+                        else 0
+                    )
+                    points.append((int(round(x_nm / 1000)), int(round(y_nm / 1000))))
+
+                valid_shapes.append(
+                    {
+                        "shape_num": shape_num,
+                        "title": title,
+                        "points": points,
+                        "num_points": num_points,
+                    }
+                )
+
+        num_shapes = len(valid_shapes)
+        log_fn(f"\nProcessing {num_shapes} capture shapes...")
+
+        for shape_data in valid_shapes:
+            log_fn(
+                f"  Shape {shape_data['shape_num']} ('{shape_data['title']}'): {shape_data['num_points']} vertices"
+            )
+
+        # All validation passed - now write the output file
+        with open(output_filename, "w", encoding="utf-8") as f1:
+            # Write XML header
+            f1.write('<?xml version="1.0" encoding="utf-8"?>\n')
+            f1.write("<ImageData>\n")
+            f1.write("  <GlobalCoordinates>1</GlobalCoordinates>\n")
+
+            # Write calibration points
+            for cal_idx, (x_um, y_um) in enumerate(calibration_points):
+                f1.write(
+                    f"  <X_CalibrationPoint_{cal_idx + 1}>{x_um}</X_CalibrationPoint_{cal_idx + 1}>\n"
+                )
+                f1.write(
+                    f"  <Y_CalibrationPoint_{cal_idx + 1}>{y_um}</Y_CalibrationPoint_{cal_idx + 1}>\n"
+                )
+
+            # Write ShapeCount
+            f1.write(f"  <ShapeCount>{num_shapes}</ShapeCount>\n")
+
+            # Write shapes
+            for shape_data in valid_shapes:
+                shape_num = shape_data["shape_num"]
+                points = shape_data["points"]
+
+                f1.write(f"  <Shape_{shape_num}>\n")
+                f1.write(f"    <PointCount>{len(points)}</PointCount>\n")
+
+                for point_idx, (x_um, y_um) in enumerate(points):
+                    f1.write(f"    <X_{point_idx + 1}>{x_um}</X_{point_idx + 1}>\n")
+                    f1.write(f"    <Y_{point_idx + 1}>{y_um}</Y_{point_idx + 1}>\n")
+
+                f1.write(f"  </Shape_{shape_num}>\n")
+
+            # Close XML
+            f1.write("</ImageData>\n")
+
+        log_fn("\n✓ Conversion complete!")
+        log_fn(f"  Output saved to: {output_filename}")
+        log_fn(f"  Total regions processed: {len(regions)}")
+        log_fn("    - 3 calibration/reference points")
+        log_fn(f"    - {num_shapes} capture shapes")
+
+        return True
+
+    except FileNotFoundError:
+        log_fn("\n✗ ERROR: Input file not found")
+        log_fn(f"  File: {input_filename}")
+        log_fn("\n  The file may have been moved or deleted.")
+        log_fn("  Please check the file path and try again.")
+        return False
+    except PermissionError:
+        log_fn("\n✗ ERROR: Permission denied")
+        log_fn(f"  File: {input_filename}")
+        log_fn(
+            "\n  You don't have permission to read this file or write to the output location."
+        )
+        log_fn(
+            "  Try running with appropriate permissions or choose a different output folder."
+        )
+        return False
+    except ExpatError as e:
+        log_fn("\n✗ ERROR: Invalid XML format")
+        log_fn(f"  File: {input_filename}")
+        log_fn(f"  Details: {e}")
+        log_fn("\n  This file may be corrupted or not a valid NDPA file.")
+        log_fn("  Try opening it in NDP.view2 to verify it's valid.")
+        return False
+    except ValueError as e:
+        log_fn("\n✗ ERROR: Invalid data in file")
+        log_fn(f"  File: {input_filename}")
+        log_fn(f"  Details: {e}")
+        log_fn("\n  The file contains invalid coordinate or numeric data.")
+        log_fn("  Please check the annotation data in NDP.view2.")
+        return False
+    except Exception as e:
+        log_fn("\n✗ ERROR: Unexpected error during conversion")
+        log_fn(f"  File: {input_filename}")
+        log_fn(f"  Error: {e}")
+        log_fn("\n  This is an unexpected error. If it persists:")
+        log_fn("    1. Check that the file is a valid NDPA file")
+        log_fn("    2. Try converting other files to see if the issue is file-specific")
+        log_fn(
+            "    3. Report this issue at: https://github.com/Snowman-scott/MicroBridge/issues"
+        )
+
+        # Only show traceback if debug mode
+        if "--debug" in sys.argv:
+            log_fn("\n  Debug traceback:")
+            traceback.print_exc()
+        else:
+            log_fn("\n  (Use --debug flag to see detailed error information)")
+        return False
+
+
+def batch_convert_directory(
+    directory=".", allow_missing_calibration=False, log_fn=print
+):
+    """
+    Convert all .ndpa files in the specified directory.
+
+    Args:
+        directory: Path to directory containing .ndpa files (default is current directory)
+        allow_missing_calibration: If False, skip files with missing calibration points
+
+    Returns:
+        Number of files successfully converted
+    """
+    # Find all .ndpa files
+    ndpa_files = []
+    for file in os.listdir(directory):
+        if file.endswith(".ndpa"):
+            ndpa_files.append(os.path.join(directory, file))
+
+    if not ndpa_files:
+        log_fn(f"No .ndpa files found in directory: {directory}")
+        return 0
+
+    log_fn("=" * 70)
+    log_fn(f"Found {len(ndpa_files)} .ndpa file(s) to convert:")
+    for file in ndpa_files:
+        log_fn(f"  - {os.path.basename(file)}")
+    log_fn("=" * 70)
+    log_fn()
+
+    # Convert each file
+    successful = 0
+    for ndpa_file in ndpa_files:
+        try:
+            if convert_ndpa_to_lmd(
+                ndpa_file,
+                allow_missing_calibration=allow_missing_calibration,
+                log_fn=log_fn,
+            ):
+                successful += 1
+            log_fn()
+        except Exception as e:
+            log_fn(f"✗ Unexpected error converting {os.path.basename(ndpa_file)}: {e}")
+            log_fn()
+
+    log_fn("=" * 70)
+    log_fn(
+        f"Batch conversion complete: {successful}/{len(ndpa_files)} files converted successfully"
+    )
+    log_fn("=" * 70)
+
+    return successful
 
 
 def resource_path(relative_path):
@@ -551,287 +921,13 @@ class MicroBridgeConverterApp:
         return str(data).strip()
 
     def convert_ndpa_file(self, input_path: str) -> bool:
-        """
-        Parse NDPA XML and write simplified LMD-compatible XML.
-        - First 3 regions -> calibration points (from circle annotations).
-        - Remaining regions -> shapes with points converted from nm -> um.
-        """
-        try:
-            base = os.path.splitext(os.path.basename(input_path))[0]
-            out_dir = self.output_folder.get() or os.path.dirname(input_path)
-            os.makedirs(out_dir, exist_ok=True)
-            out_path = os.path.join(
-                out_dir, "{}_LMD{}".format(base, self.output_extension)
-            )
-
-            with open(input_path, "r", encoding="utf-8") as fh:
-                dom = minidom.parse(fh)
-
-            regions = dom.getElementsByTagName("ndpviewstate")
-            self._enqueue_log("  Found {} regions".format(len(regions)))
-
-            if len(regions) < 3:
-                self._enqueue_log(
-                    "  ✗ ERROR: Need at least 3 regions for calibration points!"
-                )
-                return False
-
-            self._enqueue_log("  DEBUG: Processing calibration points from regions 0-2")
-
-            with open(out_path, "w", encoding="utf-8") as out:
-                out.write('<?xml version="1.0" encoding="utf-8"?>\n')
-                out.write("<ImageData>\n")
-                out.write("  <GlobalCoordinates>1</GlobalCoordinates>\n")
-
-                # calibration points - extract from circle annotations
-                for i in range(3):
-                    region = regions[i]
-                    # Get title for debugging
-                    title_elem = region.getElementsByTagName("title")
-                    title = (
-                        self._get_element_text(title_elem[0])
-                        if title_elem
-                        else "Region_{}".format(i)
-                    )
-
-                    # Try to get coordinates from annotation element first (circle annotations)
-                    # If not found, fall back to pointlist (freehand annotations)
-                    x_um = None
-                    y_um = None
-
-                    # Method 1: Check for annotation element (circle annotations)
-                    annotations = region.getElementsByTagName("annotation")
-                    if annotations:
-                        annotation = annotations[0]
-                        x_elems = annotation.getElementsByTagName("x")
-                        y_elems = annotation.getElementsByTagName("y")
-
-                        if x_elems and y_elems:
-                            try:
-                                x_nm = float(self._get_element_text(x_elems[0]))
-                                y_nm = float(self._get_element_text(y_elems[0]))
-                                x_um = int(round(x_nm / 1000.0))
-                                y_um = int(round(y_nm / 1000.0))
-                                self._enqueue_log(
-                                    "  Calibration {} ({}): X={}, Y={} (from circle annotation)".format(
-                                        i + 1, title, x_um, y_um
-                                    )
-                                )
-                            except (ValueError, TypeError):
-                                pass
-
-                    # Method 2: Fallback to pointlist (freehand/polygon annotations)
-                    if x_um is None:
-                        pointlists = region.getElementsByTagName("pointlist")
-                        if pointlists:
-                            pts = pointlists[0].getElementsByTagName("point")
-                            if pts:
-                                try:
-                                    first_pt = pts[0]
-                                    x_elems = first_pt.getElementsByTagName("x")
-                                    y_elems = first_pt.getElementsByTagName("y")
-
-                                    x_nm = float(
-                                        self._get_element_text(
-                                            x_elems[0] if x_elems else None
-                                        )
-                                    )
-                                    y_nm = float(
-                                        self._get_element_text(
-                                            y_elems[0] if y_elems else None
-                                        )
-                                    )
-                                    x_um = int(round(x_nm / 1000.0))
-                                    y_um = int(round(y_nm / 1000.0))
-                                    self._enqueue_log(
-                                        "  Calibration {} ({}): X={}, Y={} (from pointlist)".format(
-                                            i + 1, title, x_um, y_um
-                                        )
-                                    )
-                                except (ValueError, TypeError):
-                                    pass
-
-                    # If both methods failed, this is an error
-                    if x_um is None:
-                        self._enqueue_log(
-                            "  ✗ ERROR: Calibration point {} ({}) has no valid coordinates!".format(
-                                i + 1, title
-                            )
-                        )
-                        self._enqueue_log(
-                            "  CONVERSION FAILED - Missing calibration data"
-                        )
-                        self._enqueue_log(
-                            "  The LMD system requires accurate calibration points."
-                        )
-                        self._enqueue_log("\n  To fix this issue:")
-                        self._enqueue_log("    1. Open the file in NDP.view2")
-                        self._enqueue_log(
-                            "    2. Ensure the first 3 regions have valid annotations"
-                        )
-                        self._enqueue_log(
-                            "    3. Use circle annotations for calibration points (recommended)"
-                        )
-                        return False
-
-                    out.write(
-                        "  <X_CalibrationPoint_{}>{}</X_CalibrationPoint_{}>\n".format(
-                            i + 1, x_um, i + 1
-                        )
-                    )
-                    out.write(
-                        "  <Y_CalibrationPoint_{}>{}</Y_CalibrationPoint_{}>\n".format(
-                            i + 1, y_um, i + 1
-                        )
-                    )
-
-                # First pass: collect valid shapes (regions with pointlists and points)
-                # Skip ruler/linear measure annotations - they are measurement tools, not capture regions
-                valid_shapes = []
-                shape_num = 0
-                for si in range(3, len(regions)):
-                    region = regions[si]
-
-                    title_elem = region.getElementsByTagName("title")
-                    title = (
-                        self._get_element_text(title_elem[0])
-                        if title_elem
-                        else "Shape_{}".format(shape_num + 1)
-                    )
-
-                    # Skip ruler annotations (linearmeasure type)
-                    annotations = region.getElementsByTagName("annotation")
-                    if annotations:
-                        ann_type = annotations[0].getAttribute("type")
-                        if ann_type == "linearmeasure":
-                            self._enqueue_log(
-                                "  Skipping ruler annotation: '{}'".format(title)
-                            )
-                            continue
-
-                    # For freehand shapes, look for pointlist > point
-                    pointlists = region.getElementsByTagName("pointlist")
-                    if not pointlists:
-                        continue
-
-                    pts = pointlists[0].getElementsByTagName("point")
-                    if not pts:
-                        continue
-
-                    shape_num += 1
-                    valid_shapes.append(
-                        {"shape_num": shape_num, "title": title, "pts": pts}
-                    )
-
-                # Write actual ShapeCount based on valid shapes
-                num_shapes = len(valid_shapes)
-                out.write("  <ShapeCount>{}</ShapeCount>\n".format(num_shapes))
-                self._enqueue_log(
-                    "  DEBUG: Processing {} shapes from regions 3-{}".format(
-                        num_shapes, len(regions) - 1
-                    )
-                )
-
-                # Second pass: write valid shapes
-                for idx, shape_data in enumerate(valid_shapes):
-                    shape_num = shape_data["shape_num"]
-                    title = shape_data["title"]
-                    pts = shape_data["pts"]
-
-                    # Update progress for large files (>10 shapes)
-                    if num_shapes > 10:
-                        self._enqueue_progress_text(
-                            "Converting: {} (Shape {}/{})".format(
-                                os.path.basename(input_path), idx + 1, num_shapes
-                            )
-                        )
-
-                    out.write("  <Shape_{}>\n".format(shape_num))
-                    out.write("    <PointCount>{}</PointCount>\n".format(len(pts)))
-
-                    # DEBUG: Log first point of each shape
-                    if len(pts) > 0:
-                        first_pt = pts[0]
-                        x_elems = first_pt.getElementsByTagName("x")
-                        y_elems = first_pt.getElementsByTagName("y")
-                        first_x_nm = float(
-                            self._get_element_text(x_elems[0] if x_elems else None)
-                        )
-                        first_y_nm = float(
-                            self._get_element_text(y_elems[0] if y_elems else None)
-                        )
-                        first_x = int(round(first_x_nm / 1000.0))
-                        first_y = int(round(first_y_nm / 1000.0))
-                        self._enqueue_log(
-                            "  Shape {} ({}) : {} points, first=({}, {})".format(
-                                shape_num, title, len(pts), first_x, first_y
-                            )
-                        )
-
-                    for pi, p in enumerate(pts):
-                        x_elems = p.getElementsByTagName("x")
-                        y_elems = p.getElementsByTagName("y")
-                        x_nm = float(
-                            self._get_element_text(x_elems[0] if x_elems else None)
-                        )
-                        y_nm = float(
-                            self._get_element_text(y_elems[0] if y_elems else None)
-                        )
-                        x_um = int(round(x_nm / 1000.0))
-                        y_um = int(round(y_nm / 1000.0))
-                        out.write("    <X_{}>{}</X_{}>\n".format(pi + 1, x_um, pi + 1))
-                        out.write("    <Y_{}>{}</Y_{}>\n".format(pi + 1, y_um, pi + 1))
-                    out.write("  </Shape_{}>\n".format(shape_num))
-
-                out.write("</ImageData>\n")
-
-            self._enqueue_log("  ✓ Saved to: {}".format(os.path.basename(out_path)))
-            self._enqueue_log(
-                "  DEBUG: Conversion complete - check calibration point coordinates"
-            )
-            return True
-        except FileNotFoundError:
-            self._enqueue_log("  ✗ ERROR: Input file not found")
-            self._enqueue_log("  The file may have been moved or deleted.")
-            self._enqueue_log("  Please check the file path and try again.")
-            return False
-        except PermissionError:
-            self._enqueue_log("  ✗ ERROR: Permission denied")
-            self._enqueue_log(
-                "  You don't have permission to read this file or write to the output location."
-            )
-            self._enqueue_log(
-                "  Try choosing a different output folder with write permissions."
-            )
-            return False
-        except ExpatError as e:
-            self._enqueue_log("  ✗ ERROR: Invalid XML format")
-            self._enqueue_log("  Details: {}".format(e))
-            self._enqueue_log("  This file may be corrupted or not a valid NDPA file.")
-            self._enqueue_log("  Try opening it in NDP.view2 to verify it's valid.")
-            return False
-        except ValueError as e:
-            self._enqueue_log("  ✗ ERROR: Invalid data in file")
-            self._enqueue_log("  Details: {}".format(e))
-            self._enqueue_log("  The file contains invalid coordinate or numeric data.")
-            self._enqueue_log("  Please check the annotation data in NDP.view2.")
-            return False
-        except Exception as e:
-            import traceback
-
-            self._enqueue_log("  ✗ ERROR: Unexpected error during conversion")
-            self._enqueue_log("  Error: {}".format(e))
-            self._enqueue_log("\n  This is an unexpected error. If it persists:")
-            self._enqueue_log("    1. Check that the file is a valid NDPA file")
-            self._enqueue_log(
-                "    2. Try converting other files to see if the issue is file-specific"
-            )
-            self._enqueue_log(
-                "    3. Report this issue at: https://github.com/Snowman-scott/MicroBridge/issues"
-            )
-            self._enqueue_log("\n  Debug information:")
-            self._enqueue_log("  {}".format(traceback.format_exc()))
-            return False
+        out_dir = self.output_folder.get() or os.path.dirname(input_path)
+        base = os.path.splitext(os.path.basename(input_path))[0]
+        output_filename = os.path.join(out_dir, f"{base}_LMD.xml")
+        os.makedirs(out_dir, exist_ok=True)
+        return convert_ndpa_to_lmd(
+            input_path, output_filename=output_filename, log_fn=self._enqueue_log
+        )
 
     def convert_csv_file(self, input_path: str) -> bool:
         """
@@ -993,23 +1089,35 @@ class MicroBridgeConverterApp:
 
 
 if __name__ == "__main__":
+    # Check for CLI flags
+    is_cli = "--cli" in sys.argv
+    allow_missing = "--force" in sys.argv
+
+    # Get all arguments that aren't flags
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
-    if args:
-        # CLI mode
-        allow_missing = "--force" in sys.argv
+
+    if is_cli or args:  # If --cli is used OR files are dragged onto the EXE
+        # CLI Mode
+        if not args:
+            print("MicroBridge CLI Mode")
+            print("Usage: MicroBridge --cli [--force] <file1.ndpa> <file2.ndpa> ...")
+            sys.exit(1)
+
         if allow_missing:
             print(
-                "⚠️  --force flag detected: Will use placeholder (0,0) for missing calibration points"
+                "⚠️ --force flag detected: Using (0,0) for missing calibration points.\n"
             )
-            print("    WARNING: This may cause the LMD system to malfunction!\n")
-        print(f"Converting {len(args)} file(s)...\n")
+
+        print(f"Processing {len(args)} file(s)...\n")
         successful = 0
         for filename in args:
             if convert_ndpa_to_lmd(filename, allow_missing_calibration=allow_missing):
                 successful += 1
-            print()
-        print(f"\nConverted {successful}/{len(args)} file(s) successfully")
+            print()  # Spacer
+        print(f"Finished: {successful}/{len(args)} files converted successfully.")
+        sys.exit(0 if successful == len(args) else 1)
     else:
+        # GUI Mode (Default)
         root = tk.Tk()
         app = MicroBridgeConverterApp(root)
         root.mainloop()

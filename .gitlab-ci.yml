@@ -1,0 +1,30 @@
+stages:
+  - test
+
+.test_template:
+  variables:
+    PYTHONPATH: "The_Source_Code"
+  script:
+    - python3 --version
+    - python3 -m unittest discover -s tests -p "test_*.py" -v
+
+# Matrix for Python Versions 3.9 through 3.14
+test-python-versions:
+  extends: .test_template
+  image: python:${PYTHON_VERSION}-slim
+  parallel:
+    matrix:
+      - PYTHON_VERSION: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
+
+# Specific Linux Distros
+test-arch:
+  extends: .test_template
+  image: archlinux:latest
+  before_script:
+    - pacman -Syu --noconfirm python python-pip
+
+test-fedora:
+  extends: .test_template
+  image: fedora:latest
+  before_script:
+    - dnf install -y python3 python3-pip

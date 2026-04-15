@@ -1,38 +1,36 @@
-# MicroBridge Build Instructions
+# MicroBridge Build Instructions (v1.2.0)
 
-Complete guide for building MicroBridge executables and installers from source.
+Complete guide for building the unified MicroBridge executable from source. MicroBridge 1.2.0 has been consolidated into a single codebase that supports both GUI and CLI operations from a single executable.
 
 ## Prerequisites
 
 ### Required Software
 
-1. **Python 3.7+**
+1. **Python 3.9 - 3.14**
    - Download from [python.org](https://www.python.org/downloads/)
    - Verify installation: `python --version`
 
 2. **PyInstaller**
+   - Required to package the Python script into a standalone Windows executable.
    ```bash
    pip install pyinstaller
    ```
 
-3. **Inno Setup 6+** (Windows only - for creating installers)
-   - Download from [jrsoftware.org](https://jrsoftware.org/isdl.php)
-   - Install to default location: `C:\Program Files (x86)\Inno Setup 6\`
-
 ### Project Structure
 
-Ensure your project has this structure:
+Ensure your project follows the unified v1.2.0 structure:
 ```
 MicroBridge/
 ├── The_Source_Code/
-│   ├── MicroBridge_CLI.py
-│   ├── MicroBridge_GUI.py
-│   ├── MicroBridge_Icon.ico
-│   └── version_info.txt
-├── Installer_scripts/
-│   ├── installer_script_CLI.iss
-│   └── installer_script_GUI.iss
-├── MicroBridge.spec
+│   ├── MicroBridge.py          <-- Unified GUI/CLI Source
+│   ├── MicroBridge_Icon.ico    <-- App Icon
+│   └── version_info.txt        <-- Windows Metadata
+├── tests/
+│   ├── test_data/              <-- Real NDPA/XML samples
+│   └── test_*.py               <-- Automated test suite
+├── Build_From_Source/
+│   └── Build_Scripts/
+│       └── build_windows.bat   <-- Recommended Build Script
 └── README.md
 ```
 
@@ -40,421 +38,122 @@ MicroBridge/
 
 ## Building Executables
 
-### Option 1: Using Automated Build Script (Easiest)
+### Option 1: Using Automated Build Script (Recommended)
 
-**IMPORTANT:** The build scripts **MUST** be run from the project root directory, not from inside the `Build_From_Source` folder.
+The automated script ensures code quality by running the full test suite before attempting a build. This prevents shipping an executable with broken conversion logic.
 
-```bash
+**IMPORTANT:** This script must be run from the **project root directory**.
+
+```batch
 # Navigate to project root
-cd /path/to/MicroBridge
+cd MicroBridge
 
-# Run the Windows build script
-Build_From_Source\build_windows.bat
+# Run the unified build script
+Build_From_Source\Build_Scripts\build_windows.bat
 ```
 
-This script will:
-1. Build the GUI version (`MicroBridge.exe`)
-2. Build the CLI version (`MicroBridge_CLI.exe`)
-3. Place outputs in the `dist/` folder
+**This script performs the following steps:**
+1. **Validation**: Runs `unittest` against the samples in `tests/test_data/`.
+2. **Cleanup**: Wipes previous `build/` and `dist/` directories.
+3. **Compilation**: Invokes PyInstaller to create a unified, windowed executable.
 
-**Output locations:**
-- GUI: `dist/MicroBridge/MicroBridge.exe` (with `_internal/` folder)
-- CLI: `dist/MicroBridge_CLI/MicroBridge_CLI.exe` (with `_internal/` folder)
+**Output Location:**
+- `dist/MicroBridge/MicroBridge.exe`
 
-### Option 2: Using PyInstaller Spec File
+### Option 2: Manual Build (Command Line)
 
-The included `MicroBridge.spec` file configures the GUI build with all necessary settings.
+If you wish to skip testing or customize the build process manually, you can run PyInstaller directly from the command line.
 
-```bash
-# Navigate to project root
-cd /path/to/MicroBridge
+**IMPORTANT:** Run these commands from the **project root directory**.
 
-# Build GUI using spec file
-pyinstaller MicroBridge.spec
-```
-
-**Output:** `dist/MicroBridge/` folder containing:
-- `MicroBridge.exe`
-- `_internal/` folder with dependencies
-
-### Option 3: Building GUI Manually
-
-If you need to customize the build or the spec file is missing:
-
-**IMPORTANT:** Run from the project root directory.
-
-**Recommended:** Use the automated build script (Option 1) or spec file (Option 2) instead of manual commands.
-
-**Windows Command Prompt:**
+**Windows Command Prompt (CMD):**
 ```batch
-pyinstaller --name="MicroBridge" --onedir --windowed --icon="The_Source_Code\MicroBridge_Icon.ico" --version-file="The_Source_Code\version_info.txt" --add-data="The_Source_Code\MicroBridge_Icon.ico;." The_Source_Code\MicroBridge_GUI.py
+pyinstaller ^
+    --name="MicroBridge" ^
+    --onedir ^
+    --windowed ^
+    --icon="The_Source_Code\MicroBridge_Icon.ico" ^
+    --version-file="The_Source_Code\version_info.txt" ^
+    --add-data="The_Source_Code\MicroBridge_Icon.ico;." ^
+    --noconfirm ^
+    The_Source_Code\MicroBridge.py
 ```
 
-**PowerShell / Unix / Git Bash:**
+**PowerShell / Git Bash / Linux / macOS:**
 ```bash
-pyinstaller --name="MicroBridge" --onedir --windowed --icon="The_Source_Code/MicroBridge_Icon.ico" --version-file="The_Source_Code/version_info.txt" --add-data="The_Source_Code/MicroBridge_Icon.ico;." The_Source_Code/MicroBridge_GUI.py
+pyinstaller \
+    --name="MicroBridge" \
+    --onedir \
+    --windowed \
+    --icon="The_Source_Code/MicroBridge_Icon.ico" \
+    --version-file="The_Source_Code/version_info.txt" \
+    --add-data="The_Source_Code/MicroBridge_Icon.ico;." \
+    --noconfirm \
+    The_Source_Code/MicroBridge.py
 ```
 
-**Flags explained:**
-- `--onedir`: Creates a folder with executable and dependencies (required by installer script)
-- `--windowed`: No console window (GUI only)
-- `--icon`: Application icon
-- `--version-file`: Windows version metadata
-- `--add-data`: Include icon in bundle
-
-### Building CLI
-
-For the command-line version:
-
-**Recommended:** Use the automated build script (Option 1) instead of manual commands.
-
-**Windows Command Prompt:**
-```batch
-pyinstaller --name="MicroBridge_CLI" --onedir --console --icon="The_Source_Code\MicroBridge_Icon.ico" --version-file="The_Source_Code\version_info.txt" The_Source_Code\MicroBridge_CLI.py
-```
-
-**PowerShell / Unix / Git Bash:**
-```bash
-pyinstaller --name="MicroBridge_CLI" --onedir --console --icon="The_Source_Code/MicroBridge_Icon.ico" --version-file="The_Source_Code/version_info.txt" The_Source_Code/MicroBridge_CLI.py
-```
-
-**Flags explained:**
-- `--onedir`: Creates a folder with executable and dependencies (consistent with GUI)
-- `--console`: Shows console window for CLI output
-
-**Output:** `dist/MicroBridge_CLI/MicroBridge_CLI.exe`
+**Flags Explained:**
+- `--name`: Sets the output executable name.
+- `--onedir`: Creates a folder containing the EXE and its dependencies (better for distribution).
+- `--windowed`: Hides the console window when launching (GUI mode).
+- `--icon`: Applies the MicroBridge icon to the executable.
+- `--version-file`: Embeds Windows version metadata (version, author, etc.).
+- `--add-data`: Bundles the icon file inside the app folder so the GUI can find it.
 
 ---
 
-## Building Installers
+## Operating Modes
 
-After building the executables, create Windows installers using Inno Setup.
+The generated `MicroBridge.exe` is a hybrid binary that handles both user interfaces:
 
-### Prepare Build Outputs
+### 1. GUI Mode (Default)
+Simply double-click the executable. This launches the Tkinter interface for interactive file selection and conversion.
 
-Ensure your directory structure matches the installer script expectations:
-
-**For GUI Installer:**
-```
-MicroBridge/
-├── MicroBridge_/
-│   └── MicroBridge/
-│       ├── MicroBridge.exe
-│       └── _internal/
-│           └── (all dependencies)
-└── Installer_scripts/
-    └── installer_script_GUI.iss
-```
-
-**Note:** The installer expects `MicroBridge_\MicroBridge\` path. If PyInstaller created just `dist/MicroBridge/`, rename `dist/` to `MicroBridge_/`.
-
-**For CLI Installer:**
-```
-MicroBridge/
-├── dist/
-│   └── MicroBridge_CLI/
-│       ├── MicroBridge_CLI.exe
-│       └── _internal/
-│           └── (all dependencies)
-└── Installer_scripts/
-    └── installer_script_CLI.iss
-```
-
-### Compile Installers
-
-#### Method 1: Using Inno Setup GUI
-
-1. Open Inno Setup Compiler
-2. File → Open → Select `Installer_scripts/installer_script_GUI.iss` (or `_CLI.iss`)
-3. Build → Compile
-4. Installer will be created in `Installer_scripts/installer_output/`
-
-#### Method 2: Command Line
-
+### 2. CLI Mode (Automation)
+Run the executable from a terminal/command prompt to use it in automated pipelines:
 ```bash
-# GUI Installer
-"C:\Program Files (x86)\Inno Setup 6\ISCC.exe" Installer_scripts\installer_script_GUI.iss
-
-# CLI Installer
-"C:\Program Files (x86)\Inno Setup 6\ISCC.exe" Installer_scripts\installer_script_CLI.iss
+MicroBridge.exe --cli <path_to_file.ndpa>
 ```
-
-### Installer Outputs
-
-- **GUI**: `MicroBridge_Setup_v0.1.1.1.exe`
-- **CLI**: `MicroBridge_CLI_Setup_v0.1.1.1.exe`
-
-Both installers will be in: `Installer_scripts/installer_output/`
+*   `--cli`: Required flag to bypass the GUI.
+*   `--force`: Optional flag to ignore missing calibration points (uses placeholder 0,0).
 
 ---
 
-## Complete Build Process
+## Testing & CI/CD
 
-### Full Automated Build (Recommended)
+MicroBridge v1.2.0 includes a comprehensive cross-platform testing suite that runs on every commit.
 
-Create a build script to automate the entire process:
-
-**build_all.bat** (Windows):
-```batch
-@echo off
-echo ========================================
-echo Building MicroBridge v0.1.1.1
-echo ========================================
-
-echo.
-echo [1/4] Building GUI executable...
-pyinstaller MicroBridge.spec
-if %errorlevel% neq 0 (
-    echo ERROR: GUI build failed
-    exit /b 1
-)
-
-echo.
-echo [2/4] Building CLI executable...
-pyinstaller --name="MicroBridge_CLI" --onedir --console --icon="The_Source_Code/MicroBridge_Icon.ico" --version-file="The_Source_Code/version_info.txt" The_Source_Code/MicroBridge_CLI.py
-if %errorlevel% neq 0 (
-    echo ERROR: CLI build failed
-    exit /b 1
-)
-
-echo.
-echo [3/4] Preparing installer directories...
-if not exist "MicroBridge_" mkdir MicroBridge_
-if exist "dist\MicroBridge" (
-    xcopy /E /I /Y "dist\MicroBridge" "MicroBridge_\MicroBridge\"
-)
-
-echo.
-echo [4/4] Building installers...
-"C:\Program Files (x86)\Inno Setup 6\ISCC.exe" Installer_scripts\installer_script_GUI.iss
-"C:\Program Files (x86)\Inno Setup 6\ISCC.exe" Installer_scripts\installer_script_CLI.iss
-
-echo.
-echo ========================================
-echo Build complete!
-echo ========================================
-echo.
-echo Installers created in: Installer_scripts\installer_output\
-echo   - MicroBridge_Setup_v0.1.1.1.exe (GUI)
-echo   - MicroBridge_CLI_Setup_v0.1.1.1.exe (CLI)
-echo.
-pause
-```
-
-**Usage:**
+### Local Testing
+Before sharing your build, run the tests manually to ensure compatibility with your local environment:
 ```bash
-# Run from project root
-build_all.bat
+# Windows
+set PYTHONPATH=The_Source_Code
+python -m unittest discover -s tests -p "test_*.py" -v
+
+# macOS/Linux
+PYTHONPATH=The_Source_Code python3 -m unittest discover -s tests -p "test_*.py" -v
 ```
 
----
-
-## Testing Builds
-
-### Test Executables Before Creating Installers
-
-**GUI:**
-```bash
-# Run the built executable
-dist\MicroBridge\MicroBridge.exe
-```
-
-**CLI:**
-```bash
-# Test with help flag
-dist\MicroBridge_CLI.exe --help
-
-# Test conversion
-dist\MicroBridge_CLI.exe test_file.ndpa
-```
-
-### Test Installers
-
-1. Run the installer on a clean test machine (or VM)
-2. Verify installation completes without errors
-3. Test installed application functionality
-4. Verify uninstall removes all files
+### Automated CI/CD
+The project is officially validated via GitHub Actions and GitLab CI across:
+- **Operating Systems**: Windows, macOS, Ubuntu.
+- **Linux Distributions**: Debian, Arch Linux, Fedora.
+- **Python Versions**: 3.9 through 3.14.
 
 ---
 
 ## Troubleshooting
 
-### Common Issues
+### "Unit tests failed!"
+The build script will abort if tests fail. This usually means a change to `MicroBridge.py` has broken the conversion logic. Check the console output for specific failure details.
 
-#### "PyInstaller is not recognized"
-```bash
-# Install PyInstaller
-pip install pyinstaller
+### "Icon file not found"
+Ensure you are running the build command/script from the **project root**. PyInstaller looks for paths relative to the current working directory.
 
-# Or use full path
-python -m PyInstaller MicroBridge.spec
-```
-
-#### "Icon file not found"
-- Verify `MicroBridge_Icon.ico` exists in `The_Source_Code/`
-- Check path is relative to project root
-
-#### "Module not found" errors
-
-**Clean PyInstaller cache:**
-```bash
-pyinstaller --clean MicroBridge.spec
-```
-
-**Manually delete build artifacts:**
-
-Windows Command Prompt:
-```batch
-rmdir /s /q build
-rmdir /s /q dist
-rmdir /s /q __pycache__
-```
-
-PowerShell:
-```powershell
-Remove-Item -Recurse -Force build, dist, __pycache__ -ErrorAction SilentlyContinue
-```
-
-#### Installer fails: "Source file not found"
-- Check that `MicroBridge_\MicroBridge\MicroBridge.exe` exists
-- For CLI: Check `dist\MicroBridge_CLI\MicroBridge_CLI.exe` exists
-- Paths in `.iss` files are relative to the script location
-
-#### Antivirus flags executable
-- This is common with PyInstaller builds
-- Submit to antivirus vendor as false positive
-- Sign the executable with a code signing certificate (optional)
-
-### Build Size Optimization
-
-Default builds can be large. To reduce the executable size, you can exclude unused modules. There are two methods depending on your build process:
-
-**1. Manual Build: Using `--exclude-module` Flag**
-
-When building manually from the command line (without a `.spec` file), use the `--exclude-module` flag for each module you want to exclude.
-
-*Example:*
-```bash
-pyinstaller --onedir --windowed --exclude-module matplotlib --exclude-module numpy The_Source_Code/MicroBridge_GUI.py
-```
-
-**2. Spec File Build: Editing `Analysis.excludes`**
-
-PyInstaller **ignores** the `--exclude-module` command-line flag when you build using a `.spec` file.
-
-To exclude modules, you **must** edit the `MicroBridge.spec` file and add the module names to the `excludes` list inside the `Analysis` section.
-
-*Example `MicroBridge.spec` modification:*
-```python
-# In MicroBridge.spec
-a = Analysis(
-    ['The_Source_Code/MicroBridge_GUI.py'],
-    pathex=['.'],
-    binaries=[],
-    datas=[],
-    hiddenimports=[],
-    hookspath=[],
-    runtime_hooks=[],
-    # Add modules to exclude here
-    excludes=['matplotlib', 'numpy', 'scipy'],
-    win_no_prefer_redirects=False,
-    win_private_assemblies=False,
-    cipher=None,
-    noarchive=False
-)
-```
-
-**Note:** MicroBridge only uses Python's standard library. Excluding third-party modules like `numpy` or `matplotlib` may not be necessary unless they are being incorrectly bundled from your local Python environment, and thus may have minimal effect on build size.
+### Antivirus False Positives
+Executables created with PyInstaller are occasionally flagged by antivirus software. This is common for unsigned binaries. For production distribution, consider signing the executable with a code-signing certificate.
 
 ---
 
-## Version Updates
-
-When releasing a new version, update these files:
-
-1. **version_info.txt**
-   - Update `filevers` and `prodvers` tuples
-   - Update `FileVersion` and `ProductVersion` strings
-
-2. **Installer scripts** (`installer_script_GUI.iss` and `installer_script_CLI.iss`)
-   - Update `#define MyAppVersion "0.1"` to new version
-
-3. **CHANGELOG.md**
-   - Document all changes in new version section
-
-4. **README.md**
-   - Update version numbers if mentioned
-
----
-
-## Clean Build
-
-To ensure a fresh build without cached files:
-
-```bash
-# Delete build artifacts
-rmdir /S /Q build dist MicroBridge_ __pycache__
-
-# Delete PyInstaller cache
-rmdir /S /Q %LOCALAPPDATA%\pyinstaller
-
-# Rebuild
-pyinstaller --clean MicroBridge.spec
-```
-
----
-
-## Distribution Checklist
-
-Before releasing installers:
-
-- [ ] Version numbers updated in all files
-- [ ] CHANGELOG.md updated
-- [ ] Tested on clean Windows installation
-- [ ] All features working (conversion, batch, GUI controls)
-- [ ] Error handling works correctly
-- [ ] Installers create proper shortcuts
-- [ ] Uninstaller removes all files
-- [ ] No antivirus false positives (or documented)
-- [ ] README.md reflects current version
-
----
-
-## Platform-Specific Notes
-
-### Windows
-- Builds work on Windows 7, 10, and 11
-- PyInstaller creates Windows-only executables
-- Inno Setup requires Windows
-
-### macOS/Linux
-- GUI and CLI source code work on all platforms
-- No installer scripts provided (use source directly)
-- Users can create their own PyInstaller builds:
-  ```bash
-  pyinstaller --onefile --windowed MicroBridge_GUI.py
-  ```
-
----
-
-## Additional Resources
-
-- [PyInstaller Documentation](https://pyinstaller.org/en/stable/)
-- [Inno Setup Documentation](https://jrsoftware.org/ishelp/)
-- [Python Packaging Guide](https://packaging.python.org/)
-
----
-
-## Support
-
-If you encounter build issues:
-
-1. Check this guide's Troubleshooting section
-2. Verify all prerequisites are installed
-3. Try a clean build
-4. Report persistent issues at: https://github.com/Snowman-scott/MicroBridge/issues
-
----
-
-**Last Updated:** 2026-02-10  
-**MicroBridge Version:** 0.1.1.1
+**Last Updated:** 2026-04-15  
+**MicroBridge Version:** 1.2.0

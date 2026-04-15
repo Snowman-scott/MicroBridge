@@ -9,8 +9,7 @@ build/
 
 # Python
 The_Source_Code/__pycache__/
-The_Source_Code/MicroBridge_CLI.py
-The_Source_Code/MicroBridge_GUI.py
+The_Source_Code/MC_temp.py
 __pycache__/
 *.py[cod]
 *$py.class
@@ -50,6 +49,7 @@ Thumbs.db
 
 # Internal development files
 VERSION_0.1.1_SUMMARY.md
+Old_version_releses/
 
 # Installer output
 Installer_scripts/Output/
