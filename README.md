@@ -2,6 +2,11 @@
 
 A conversion tool that bridges Hamamatsu's NDP.view2 digital slide annotation system with Leica Microdissection (LMD) microscopes. Converts `.ndpa` annotation files into LMD-compatible XML format.
 
+# NOTICE!
+## Main development of Microbridge will be moving over to GitLab!  
+A mirror will still be pushed here But please DO NOT make or push any code to this REPO!  
+Thanks, Rose :3
+
 ## Purpose
 
 Researchers annotate regions of interest in NDP.view2 and need to transfer those annotations to LMD systems for laser microdissection. MicroBridge automates this conversion, handling coordinate transformation, calibration point extraction, and batch processing.
@@ -32,8 +37,9 @@ We've completely overhauled the engine to be more robust and easier to use:
 ## Running MicroBridge in its 2 different modes
 When users want to use the **Graphical user interface**: \
 All you have to do is run the `MicroBridge.exe` file Normally Via Double clicking the icon
-\ When you want to use the **CLI Tool**: \
-Open terminal, wherever the `MicroBridge.exe` and Run \
+
+When you want to use the **CLI Tool**: \
+Open terminal, wherever the `MicroBridge.exe` is and run:
 ```
 MicroBridge.exe --cli
 ```
@@ -44,13 +50,14 @@ Requires Python 3.9 - 3.14 (standard library only - no dependencies).
 
 ```bash
 python The_Source_Code/MicroBridge.py
-# Or for the CLI 
+# Or for the CLI
 python The_Source_Code/MicroBridge.py --cli
 ```
 
 For building executables, see [BUILD_INSTRUCTIONS.md](Build_From_Source/BUILD_INSTRUCTIONS.md).
 
 ## Workflow
+
 **NDPI -> NDPA (Annotation file) -> MicroBridge -> LMD XML**
 
 ## Annotation Requirements
@@ -79,12 +86,17 @@ Ruler annotations (linear measurements) are automatically skipped during convers
 
 **Planned**
 - macOS and Linux native packages
-- Xenium annotation conversion Support
+- Xenium annotation conversion support
 - Omero support
 
 **Under Consideration**
-- Images, and gifs in README.md
-- Add a Basic QuickStart Guide
+- Context menu for file list (right-click to remove, open location)
+- Additional annotation format support
+- Drag-and-drop in GUI
+- Recent files list
+- Batch operation presets
+- Images and gifs in README.md
+- Basic QuickStart Guide
 
 ## Development Story
 
