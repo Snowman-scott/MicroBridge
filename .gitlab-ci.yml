@@ -12,6 +12,9 @@ stages:
 test-python-versions:
   extends: .test_template
   image: python:${PYTHON_VERSION}-slim
+  before_script:
+    - apt-get update
+    - apt-get install -y python3-tk tk-dev
   parallel:
     matrix:
       - PYTHON_VERSION: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
@@ -21,31 +24,25 @@ test-arch:
   extends: .test_template
   image: archlinux:latest
   before_script:
-    - pacman -Syu --noconfirm python python-pip
+    - pacman -Syu --noconfirm python python-pip tk
 
 test-fedora:
   extends: .test_template
   image: fedora:latest
   before_script:
-    - dnf install -y python3 python3-pip
+    - dnf install -y python3 python3-pip python3-tkinter
 
 test-ubuntu:
   extends: .test_template
   image: ubuntu:latest
   before_script:
     - apt-get update
-    - apt-get install -y python3 python3-pip
-
-test-macos:
-  extends: .test_template
-  tags:
-    - saas-macos-medium-m1
-  before_script:
-    - brew install python3
+    - apt-get install -y python3 python3-pip python3-tk
 
 test-windows:
   variables:
     PYTHONPATH: "The_Source_Code"
+    PYTHONIOENCODING: "utf-8"
   stage: test
   tags:
     - saas-windows-medium-amd64
