@@ -15,7 +15,7 @@ from xml.dom import minidom
 
 # Add parent directory to path to import MicroBridge modules
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "The_Source_Code"))
-from MicroBridge_CLI import (  # type: ignore[import]
+from MicroBridge import (  # type: ignore[import]
     batch_convert_directory,
     convert_ndpa_to_lmd,
 )
