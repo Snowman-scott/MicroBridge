@@ -2,11 +2,6 @@
 
 A conversion tool that bridges Hamamatsu's NDP.view2 digital slide annotation system with Leica Microdissection (LMD) microscopes. Converts `.ndpa` annotation files into LMD-compatible XML format.
 
-# NOTICE!
-## Main development of Microbridge will be moving over to GitLab!  
-A mirror will still be pushed here But please DO NOT make or push any code to this REPO!  
-Thanks, Rose :3
-
 ## Purpose
 
 Researchers annotate regions of interest in NDP.view2 and need to transfer those annotations to LMD systems for laser microdissection. MicroBridge automates this conversion, handling coordinate transformation, calibration point extraction, and batch processing.
