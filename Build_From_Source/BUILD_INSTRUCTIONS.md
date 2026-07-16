@@ -1,5 +1,7 @@
 # MicroBridge Build Instructions (v1.2.0)
 
+## Outdated (Not really but labeling them as i want to re do this with better structure and not PI)
+
 Complete guide for building the unified MicroBridge executable from source. MicroBridge 1.2.0 has been consolidated into a single codebase that supports both GUI and CLI operations from a single executable.
 
 ## Prerequisites
