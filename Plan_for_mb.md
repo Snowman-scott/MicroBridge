@@ -27,3 +27,15 @@ tests/
     ├── test_gui.py
     └── test_cli.py
 ```
+
+## CLI
+- Click or argparse (probably click)
+- Needs To have all the same features as the GUI
+- Batch processing
+- Clean easy to use
+
+## GUI
+- Customtkinter or Something else if i find something good?
+- Probably allow PI to make it following my styling guide
+- Design should look neat and nice not old and windows 95 like
+- Should be easy to use, not have things burried in sub menus
