@@ -91,3 +91,7 @@ Desktop.ini
 # Release files (not for repo)
 RELEASE_README.txt
 GITHUB_RELEASE*.md
+
+# Temp stuff
+tmp
+The_Source_Code
