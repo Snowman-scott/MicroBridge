@@ -1,0 +1,15 @@
+[project]
+name = "MicroBridge"
+version = "0.1.2"
+requires-python = ">=3.11"
+dependencies = [
+    "click",
+    "tk",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]

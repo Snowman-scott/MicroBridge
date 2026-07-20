@@ -1,4 +1,11 @@
 from xml.dom import minidom
+from pathlib import Path
+
+def derive_output_filename(input_filename: str) -> str:
+    p = Path(input_filename)
+    new_path = p.parent / (p.stem + "_LMD.xml")
+
+    return str(new_path)
 
 def convert_ndpa_to_lmd_core(input_filename: str, output_filename: str) -> None:
     # 1. Parsing The input
@@ -81,23 +88,23 @@ def convert_ndpa_to_lmd_core(input_filename: str, output_filename: str) -> None:
 
         # We write the 3 calibration points first
         for cal_idx, (x_um, y_um) in enumerate(calibration_points):
-            f1.write(f" <X_CalibrationPoint_{cal_idx + 1}>{x_um}</X_CalibrationPoint_{cal_idx + 1}>\n")
-            f1.write(f" <Y_CalibrationPoint_{cal_idx + 1}>{y_um}</Y_CalibrationPoint_{cal_idx + 1}>\n")
+            f1.write(f"  <X_CalibrationPoint_{cal_idx + 1}>{x_um}</X_CalibrationPoint_{cal_idx + 1}>\n")
+            f1.write(f"  <Y_CalibrationPoint_{cal_idx + 1}>{y_um}</Y_CalibrationPoint_{cal_idx + 1}>\n")
 
-        f1.write(f" <ShapeCount>{len(valid_shapes)}</ShapeCount>\n")
+        f1.write(f"  <ShapeCount>{len(valid_shapes)}</ShapeCount>\n")
 
         for shape_data in valid_shapes:
             s_num = shape_data["shape_num"]
             points = shape_data["points"]
 
-            f1.write(f"     <Shape_{s_num}>\n")
-            f1.write(f"         <PointCount>{len(points)}</PointCount>\n")
+            f1.write(f"  <Shape_{s_num}>\n")
+            f1.write(f"    <PointCount>{len(points)}</PointCount>\n")
 
             # We write the X/Y cords for the Verticies of this shape
             for point_idx, (x_um, y_um) in enumerate(points):
-                f1.write(f"     <X_{point_idx + 1}>{x_um}</X_{point_idx + 1}>\n")
-                f1.write(f"     <Y_{point_idx + 1}>{y_um}</Y_{point_idx + 1}>\n")
+                f1.write(f"    <X_{point_idx + 1}>{x_um}</X_{point_idx + 1}>\n")
+                f1.write(f"    <Y_{point_idx + 1}>{y_um}</Y_{point_idx + 1}>\n")
 
-            f1.write(f" </Shape_{s_num}>\n")
+            f1.write(f"  </Shape_{s_num}>\n")
 
         f1.write("</ImageData>\n")
