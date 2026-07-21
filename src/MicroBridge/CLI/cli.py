@@ -7,6 +7,9 @@ from MicroBridge.Core.core import convert_ndpa_to_lmd_core, derive_output_filena
 
 
 @click.command()
+@click.option('-i', '--input', nargs=1, multiple=True)
+@click.option('-b', '--batch', nargs=infin, multiple=True)
+@click.option('-o', '--output', nargs=1, multiple=True)
 @click.argument("files", nargs=-1, required=True)
 def run(files):
     successful = 0
