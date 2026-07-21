@@ -2,36 +2,57 @@ import sys
 
 import click
 
-from MicroBridge.utils import clear_terminal
+from pathlib import Path
+
 from MicroBridge.Core.core import convert_ndpa_to_lmd_core, derive_output_filename
 
-
-@click.command()
-@click.option('-i', '--input', nargs=1, multiple=True)
-@click.option('-b', '--batch', nargs=infin, multiple=True)
-@click.option('-o', '--output', nargs=1, multiple=True)
-@click.argument("files", nargs=-1, required=True)
-def run(files):
+def convert_files(files, output):
     successful = 0
     failures = []
     for file in files:
         output_name = derive_output_filename(file)
+        if output:
+            output_name = str(Path(output) / Path(output_name).name)
         try:
             convert_ndpa_to_lmd_core(file, output_name)
-        except ValueError as e:
+        except (ValueError, FileNotFoundError, IsADirectoryError) as e:
             failures.append((file, e))
             click.echo(f"Converting the ndpa to an LMD xml failed: {e}", err=True)
         else:
             click.echo("Successfully converted ndpa into LMD xml :3")
             successful += 1
+    return successful, failures
+
+def find_ndpa_files(directory):
+    files = []
+    for entry in Path(directory).iterdir():
+        if entry.suffix == ".ndpa":
+            files.append(str(entry))
+    return files
+
+@click.command()
+@click.pass_context
+@click.option('-b', '--batch',type=click.Path(), nargs=1, required=False, help="Process a Directory of '.ndpa' files in one go.")
+@click.option('-o', '--output',type=click.Path(), nargs=1, required=False, help="Select an output directory for the converted '.ndpa' files to end up in.")
+@click.argument("files", nargs=-1, required=False)
+def run(ctx, files, batch, output):
+    if not files and not batch:
+        click.echo(ctx.get_help())
+        sys.exit(1)
+    elif files and batch:
+        click.echo(f"You cannot have files and -b dir in one command \n\n{ctx.get_help()}")
+        sys.exit(1)
+    elif batch:
+        files = find_ndpa_files(batch)
+    successful, failures = convert_files(files, output)
 
 
     click.echo("\n\n\n===============================================")
     if successful == len(files):
-        click.echo(f"{successful}/{len(files)} files converted. \nAll files converted fine :3")
+        click.secho(f"{successful}/{len(files)} files converted. \nAll files converted fine :3", fg="green",err=False)
         sys.exit(0)
     else:
-        click.echo(f"{len(failures)}/{len(files)} failed to convert 3:\nThe files that failed to convert were:\n")
+        click.secho(f"{len(failures)}/{len(files)} failed to convert 3:\nThe files that failed to convert were:\n", fg="red", err=True)
         for filename, err in failures:
-            click.echo(f"{filename} errored with: {err}", err=True)
+            click.secho(f"{filename} errored with: {err}", fg="red", bold=True, err=True)
         sys.exit(1)
