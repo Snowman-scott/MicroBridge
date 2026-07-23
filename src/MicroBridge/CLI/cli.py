@@ -10,6 +10,10 @@ def convert_files(files, output):
     successful = 0
     failures = []
     for file in files:
+        if Path(file).suffix != ".ndpa":
+            message = f"\nExpected a '.ndpa' file, got a '{Path(file).suffix}' file Instead"
+            failures.append((file, message))
+            continue
         output_name = derive_output_filename(file)
         if output:
             output_name = str(Path(output) / Path(output_name).name)
