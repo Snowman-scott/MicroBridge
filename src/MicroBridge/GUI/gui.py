@@ -7,11 +7,7 @@ import customtkinter as ctk
 from MicroBridge.Core.core import convert_ndpa_to_lmd_core, derive_output_filename
 
 
-COLOR_GREEN = "#4CAF50"
-COLOR_RED = "#F44336"
-COLOR_ORANGE = "#FF9800"
-COLOR_GREY = "#888888"
-PAD = 10
+PAD = 12
 
 
 class App(ctk.CTk):
@@ -26,9 +22,7 @@ class App(ctk.CTk):
         self._converting = False
 
         self._setup_ui()
-        self._log("Ready — select files to begin", COLOR_GREY)
-
-    # ── UI Setup ──────────────────────────────────────────────────────
+        self._log("ready — pick some files")
 
     def _setup_ui(self):
         self.grid_columnconfigure(0, weight=2, uniform="col")
@@ -39,27 +33,22 @@ class App(ctk.CTk):
         self._build_right()
 
     def _build_left(self):
-        left = ctk.CTkFrame(self, corner_radius=10)
-        left.grid(row=0, column=0, sticky="nsew", padx=(PAD, 5), pady=PAD)
+        left = ctk.CTkFrame(self, corner_radius=12)
+        left.grid(row=0, column=0, sticky="nsew", padx=(PAD, 6), pady=PAD)
         left.grid_columnconfigure(0, weight=1)
-        left.grid_rowconfigure(5, weight=1)
+        left.grid_rowconfigure(6, weight=1)
 
         ctk.CTkLabel(
             left,
             text="MicroBridge",
-            font=ctk.CTkFont(size=20, weight="bold"),
-        ).grid(row=0, column=0, padx=PAD, pady=(14, 4), sticky="w")
+            font=ctk.CTkFont(size=22, weight="bold"),
+        ).grid(row=0, column=0, padx=PAD, pady=(16, 2), sticky="w")
 
-        ctk.CTkLabel(
-            left,
-            text="NDPA → LMD XML Converter",
-            font=ctk.CTkFont(size=11),
-            text_color=COLOR_GREY,
-        ).grid(row=1, column=0, padx=PAD, pady=(0, 10), sticky="w")
+        sep = ctk.CTkFrame(left, height=1)
+        sep.grid(row=1, column=0, padx=PAD, pady=(4, 12), sticky="ew")
 
-        # ── Type selector ──
-        ctk.CTkLabel(left, text="Conversion Type:", anchor="w").grid(
-            row=2, column=0, padx=PAD, pady=(0, 2), sticky="ew"
+        ctk.CTkLabel(left, text="Conversion type", anchor="w", font=ctk.CTkFont(size=11)).grid(
+            row=2, column=0, padx=PAD, pady=(0, 4), sticky="ew"
         )
         self.type_var = ctk.StringVar(value="NDPA")
         ctk.CTkComboBox(
@@ -68,98 +57,93 @@ class App(ctk.CTk):
             variable=self.type_var,
             state="readonly",
             corner_radius=6,
-        ).grid(row=3, column=0, padx=PAD, pady=(0, 12), sticky="ew")
+        ).grid(row=3, column=0, padx=PAD, pady=(0, 14), sticky="ew")
 
-        # ── File action buttons ──
         btn_frame = ctk.CTkFrame(left, fg_color="transparent")
-        btn_frame.grid(row=4, column=0, padx=PAD, pady=(0, 4), sticky="ew")
+        btn_frame.grid(row=4, column=0, padx=PAD, pady=(0, 2), sticky="ew")
         btn_frame.grid_columnconfigure((0, 1, 2), weight=1)
 
         ctk.CTkButton(
-            btn_frame, text="Select Files", command=self._select_files
+            btn_frame, text="Select input files", command=self._select_files, corner_radius=6,
+            fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("#d0d0d0", "#333333"),
+            border_width=1,
         ).grid(row=0, column=0, padx=2, sticky="ew")
 
         ctk.CTkButton(
-            btn_frame, text="Select Folder", command=self._select_folder
+            btn_frame, text="Scan a folder", command=self._select_folder, corner_radius=6,
+            fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("#d0d0d0", "#333333"),
+            border_width=1,
         ).grid(row=0, column=1, padx=2, sticky="ew")
 
         ctk.CTkButton(
-            btn_frame, text="Output Folder", command=self._select_output
+            btn_frame, text="Pick output folder", command=self._select_output, corner_radius=6,
+            fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("#d0d0d0", "#333333"),
+            border_width=1,
         ).grid(row=0, column=2, padx=2, sticky="ew")
 
-        # ── Selected files ──
         self.files_label = ctk.CTkLabel(
-            left, text="Selected Files: (none)", anchor="w"
+            left, text="Selected files: (none)", anchor="w", font=ctk.CTkFont(size=11),
         )
-        self.files_label.grid(row=5, column=0, padx=PAD, pady=(8, 2), sticky="ew")
+        self.files_label.grid(row=5, column=0, padx=PAD, pady=(10, 2), sticky="ew")
 
         self.files_text = ctk.CTkTextbox(left, state="disabled", corner_radius=6)
         self.files_text.grid(row=6, column=0, padx=PAD, pady=(0, 6), sticky="nsew")
 
-        # ── Output indicator ──
         self.output_label = ctk.CTkLabel(
             left,
-            text="Output: (same directory as input)",
+            text="Output: (same dir as input)",
             anchor="w",
             font=ctk.CTkFont(size=11),
-            text_color=COLOR_GREY,
         )
         self.output_label.grid(row=7, column=0, padx=PAD, pady=(0, 8), sticky="ew")
 
-        # ── Convert button ──
         self.convert_btn = ctk.CTkButton(
             left,
             text="Convert",
-            height=40,
+            height=42,
             font=ctk.CTkFont(size=14, weight="bold"),
             command=self._convert,
             corner_radius=8,
-            fg_color="#2B7A4B",
-            hover_color="#1E5F3A",
-            text_color="#FFFFFF",
         )
-        self.convert_btn.grid(row=8, column=0, padx=PAD, pady=(0, 14), sticky="ew")
+        self.convert_btn.grid(row=8, column=0, padx=PAD, pady=(4, 16), sticky="ew")
 
     def _build_right(self):
-        right = ctk.CTkFrame(self, corner_radius=10)
-        right.grid(row=0, column=1, sticky="nsew", padx=(5, PAD), pady=PAD)
+        right = ctk.CTkFrame(self, corner_radius=12)
+        right.grid(row=0, column=1, sticky="nsew", padx=(6, PAD), pady=PAD)
         right.grid_columnconfigure(0, weight=1)
         right.grid_rowconfigure(1, weight=1)
 
-        # ── Header row ──
         hdr = ctk.CTkFrame(right, fg_color="transparent")
         hdr.grid(row=0, column=0, padx=PAD, pady=(14, 6), sticky="ew")
         hdr.grid_columnconfigure(0, weight=1)
 
         ctk.CTkLabel(
             hdr,
-            text="Conversion Log",
-            font=ctk.CTkFont(size=16, weight="bold"),
+            text="Log",
+            font=ctk.CTkFont(size=16),
         ).grid(row=0, column=0, sticky="w")
 
         ctk.CTkButton(
             hdr,
             text="Clear",
-            width=60,
-            height=26,
+            width=56,
+            height=24,
             font=ctk.CTkFont(size=11),
             command=self._clear_log,
             corner_radius=4,
-            fg_color="#3A3A3A",
-            hover_color="#555555",
+            fg_color="transparent",
+            text_color=("gray10", "gray90"),
+            hover_color=("#d0d0d0", "#333333"),
+            border_width=1,
         ).grid(row=0, column=1)
 
-        # ── Log area ──
         self.log_text = ctk.CTkTextbox(right, state="disabled", corner_radius=6)
         self.log_text.grid(row=1, column=0, padx=PAD, pady=(0, PAD), sticky="nsew")
 
-        self.log_text.tag_config("green", foreground=COLOR_GREEN)
-        self.log_text.tag_config("red", foreground=COLOR_RED)
-        self.log_text.tag_config("orange", foreground=COLOR_ORANGE)
-        self.log_text.tag_config("grey", foreground=COLOR_GREY)
-        self.log_text.tag_config("bold", font=ctk.CTkFont(weight="bold"))
-
-    # ── Logging ───────────────────────────────────────────────────────
+        self.log_text.tag_config("ok", foreground="#2b8a5e")
+        self.log_text.tag_config("err", foreground="#c0392b")
+        self.log_text.tag_config("warn", foreground="#b45309")
+        self.log_text.tag_config("muted", foreground="#6b7280")
 
     def _log(self, msg: str, tag: str | None = None):
         self.log_text.configure(state="normal")
@@ -175,11 +159,9 @@ class App(ctk.CTk):
         self.log_text.delete("1.0", "end")
         self.log_text.configure(state="disabled")
 
-    # ── File selection ────────────────────────────────────────────────
-
     def _select_files(self):
         files = filedialog.askopenfilenames(
-            title="Select NDPA files",
+            title="Select input files",
             filetypes=[("NDPA files", "*.ndpa"), ("All files", "*.*")],
         )
         if files:
@@ -187,7 +169,7 @@ class App(ctk.CTk):
             self._update_files_display()
 
     def _select_folder(self):
-        folder = filedialog.askdirectory(title="Select Folder with NDPA files")
+        folder = filedialog.askdirectory(title="Select a folder")
         if folder:
             self.input_files = sorted(
                 str(f) for f in Path(folder).iterdir() if f.suffix == ".ndpa"
@@ -199,9 +181,7 @@ class App(ctk.CTk):
         if folder:
             self.output_dir = folder
             short = f"...{folder[-50:]}" if len(folder) > 53 else folder
-            self.output_label.configure(
-                text=f"Output: {short}", text_color=COLOR_ORANGE
-            )
+            self.output_label.configure(text=f"Output: {short}")
 
     def _update_files_display(self):
         self.files_text.configure(state="normal")
@@ -211,23 +191,19 @@ class App(ctk.CTk):
         self.files_text.configure(state="disabled")
 
         count = len(self.input_files)
-        self.files_label.configure(text=f"Selected Files: ({count})")
-        self._log(f"{count} file(s) selected", "green" if count else None)
-
-    # ── Conversion ────────────────────────────────────────────────────
+        self.files_label.configure(text=f"Selected files: ({count})")
+        self._log(f"{count} file(s) selected", "ok" if count else None)
 
     def _convert(self):
         if self._converting:
             return
         if not self.input_files:
-            self._log("Nothing to convert — select files first", "red")
+            self._log("nothing to convert — pick files first", "err")
             return
         self._converting = True
         self.convert_btn.configure(
             state="disabled",
             text="Converting...",
-            fg_color="#555555",
-            hover_color="#555555",
         )
         threading.Thread(target=self._convert_worker, daemon=True).start()
 
@@ -236,8 +212,6 @@ class App(ctk.CTk):
         self.convert_btn.configure(
             state="normal",
             text="Convert",
-            fg_color="#2B7A4B",
-            hover_color="#1E5F3A",
         )
 
     def _convert_worker(self):
@@ -248,12 +222,12 @@ class App(ctk.CTk):
         fails: list[tuple[str, str | Exception]] = []
 
         for i, file in enumerate(files):
-            self.after(0, self._log, f"[{i+1}/{total}] {Path(file).name} ...", "grey")
+            self.after(0, self._log, f"[{i+1}/{total}] {Path(file).name} ...", "muted")
 
             if Path(file).suffix != ".ndpa":
-                msg = f"Expected a '.ndpa' file, got a '{Path(file).suffix}' file Instead"
+                msg = f"expected '.ndpa', got '{Path(file).suffix}'"
                 fails.append((file, msg))
-                self.after(0, self._log, f"  {msg}", "red")
+                self.after(0, self._log, f"  {msg}", "err")
                 continue
 
             output = derive_output_filename(file)
@@ -263,37 +237,26 @@ class App(ctk.CTk):
             try:
                 convert_ndpa_to_lmd_core(file, output)
                 ok += 1
-                self.after(
-                    0, self._log,
-                    f"  Successfully converted ndpa into LMD xml :3", "green",
-                )
+                self.after(0, self._log, f"  done", "ok")
             except (ValueError, FileNotFoundError, IsADirectoryError) as e:
                 fails.append((file, e))
-                self.after(
-                    0, self._log,
-                    f"  Converting the ndpa to an LMD xml failed: {e}", "red",
-                )
+                self.after(0, self._log, f"  failed: {e}", "err")
 
         self.after(0, self._log, "")
-        self.after(0, self._log, "=" * 47, "bold")
+        self.after(0, self._log, "─" * 40, "muted")
         if ok == total:
-            self.after(
-                0, self._log,
-                f"{ok}/{total} files converted. \nAll files converted fine :3", "green",
-            )
+            self.after(0, self._log, f"{ok}/{total} converted", "ok")
         else:
-            self.after(0, self._log, f"{len(fails)}/{total} failed to convert 3:", "red")
-            self.after(0, self._log, "The files that failed to convert were:", "bold")
+            self.after(0, self._log, f"{len(fails)}/{total} failed", "err")
+            self.after(0, self._log, "failed files:", "warn")
             for fname, err in fails:
-                self.after(
-                    0, self._log, f"  {Path(fname).name} errored with: {err}", "red",
-                )
+                self.after(0, self._log, f"  {Path(fname).name} — {err}", "err")
 
         self.after(0, self._convert_finished)
 
 
 def run():
-    ctk.set_appearance_mode("dark")
+    ctk.set_appearance_mode("system")
     ctk.set_default_color_theme("blue")
     app = App()
     app.mainloop()
