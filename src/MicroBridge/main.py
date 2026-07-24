@@ -8,7 +8,8 @@ def main():
         from MicroBridge.CLI.cli import run as cli_run
         cli_run.main(args=argv)
     else:
-        print("Hello, This will be a GUI soon :3")
+        from MicroBridge.GUI.gui import run as gui_run
+        gui_run()
 
 if __name__ == "__main__":
     main()
