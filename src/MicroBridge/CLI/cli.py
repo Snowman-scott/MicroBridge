@@ -3,6 +3,7 @@ import sys
 import click
 
 from pathlib import Path
+from xml.parsers.expat import ExpatError
 
 from MicroBridge.Core.core import convert_ndpa_to_lmd_core, derive_output_filename
 
@@ -19,7 +20,7 @@ def convert_files(files, output):
             output_name = str(Path(output) / Path(output_name).name)
         try:
             convert_ndpa_to_lmd_core(file, output_name)
-        except (ValueError, FileNotFoundError, IsADirectoryError) as e:
+        except (ValueError, FileNotFoundError, IsADirectoryError, ExpatError) as e:
             failures.append((file, e))
             click.echo(f"Converting the ndpa to an LMD xml failed: {e}", err=True)
         else:
