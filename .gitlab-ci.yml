@@ -21,6 +21,8 @@ test-arch:
   image: archlinux:latest
   before_script:
     - pacman -Syu --noconfirm python3 python-pip
+    - python -m .venv venv
+    - source .venv/bin/activate
 
 test-fedora:
   extends: .test_template
