@@ -10,15 +10,18 @@ from MicroBridge.Core.core import derive_output_filename, convert_ndpa_to_lmd_co
 class TestDeriveOutputFilename(unittest.TestCase):
     def test_appends_lmd_xml_suffix(self):
         result = derive_output_filename("/data/sample.ndpa")
-        self.assertEqual(result, "/data/sample_LMD.xml")
+        expected = str(Path("/data/sample_LMD.xml"))
+        self.assertEqual(result, expected)
 
     def test_handles_file_without_extension(self):
         result = derive_output_filename("/data/sample")
-        self.assertEqual(result, "/data/sample_LMD.xml")
+        expected = str(Path("/data/sample_LMD.xml"))
+        self.assertEqual(result, expected)
 
     def test_keeps_different_directory(self):
         result = derive_output_filename("/some/other/path/foo.ndpa")
-        self.assertEqual(result, "/some/other/path/foo_LMD.xml")
+        expected = str(Path("/some/other/path/foo_LMD.xml"))
+        self.assertEqual(result, expected)
 
 
 class TestConvertNdpaToLmdCore(unittest.TestCase):
