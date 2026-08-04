@@ -2,7 +2,7 @@
 SETLOCAL EnableDelayedExpansion
 
 echo ============================================================
-echo  MicroBridge: Unified Test & Build (v1.2.0)
+echo  MicroBridge: Unified Test & Build (v1.2.0) OUTDATED!!!!!!
 echo ============================================================
 echo.
 
