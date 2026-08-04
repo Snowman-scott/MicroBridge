@@ -70,6 +70,37 @@ python run_tests.py
 ```
 to set up the venv and run the tests
 
+## Codebase Layout
+```
+src/
+    ├── MicroBridge/
+    │   ├── __init__.py
+    │   ├── core/
+    │   │   ├── __init__.py
+    │   │   ├── conversion.py
+    │   │   └── utils.py
+    │   ├── cli/
+    │   │   ├── __init__.py
+    │   │   └── main.py
+    │   └── gui/
+    │       ├── __init__.py
+    │       └── main.py
+tests/
+    ├── __init__.py
+    ├── README.md
+    ├── test_core.py
+    ├── test_gui.py
+    ├── test_intergration.py
+    ├── test_utils.py
+    ├── test_cli.py
+    └── test_Data/
+        └── All the test data, I am not writing that out...
+        
+pyproject.toml
+run_tests.py
+
+```
+
 # License
 This project is licensed under the GNU GPLv3.0 License
 This is important as it support copyleft! and Free software!
