@@ -2,8 +2,8 @@ import unittest
 from MicroBridge.utils import should_use_cli
 
 class TestShouldUseCli(unittest.TestCase):
-    def test_no_args_returns_true(self):
-        self.assertTrue(should_use_cli([]))
+    def test_no_args_returns_false(self):
+        self.assertFalse(should_use_cli([]))
 
     def test_dash_dash_gui_returns_false(self):
         self.assertFalse(should_use_cli(["--gui"]))
