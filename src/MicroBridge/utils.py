@@ -1,5 +1,7 @@
-# Checks to see if the program was ran with the --gui flag
+# Checks to see if the program was ran with the --gui flag or without any arguments
 def should_use_cli(argv: list[str]) -> bool:
+    if not argv:
+        return False
     lowered = [arg.lower() for arg in argv]
     return "--gui" not in lowered
 

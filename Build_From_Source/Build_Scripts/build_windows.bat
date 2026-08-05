@@ -2,14 +2,14 @@
 SETLOCAL EnableDelayedExpansion
 
 echo ============================================================
-echo  MicroBridge: Unified Test & Build (v1.2.0) OUTDATED!!!!!!
+echo  MicroBridge: Unified Test ^& Build
 echo ============================================================
 echo.
 
 REM --- Step 1: Automated Testing ---
 echo [1/4] Running Unit Tests with Real Test Data...
-REM Set PYTHONPATH so tests can find MicroBridge.py in The_Source_Code folder
-set PYTHONPATH=%PYTHONPATH%;%CD%\The_Source_Code
+REM Set PYTHONPATH so tests can find MicroBridge in the src folder
+set PYTHONPATH=%PYTHONPATH%;%CD%\src
 python -m unittest discover -s tests -p "test_*.py" -v
 
 if %errorlevel% neq 0 (
@@ -31,20 +31,17 @@ echo Done.
 REM --- Step 3: Single Unified Build ---
 echo.
 echo [3/4] Building Unified MicroBridge Executable...
-echo (Supports both GUI and --cli modes)
+echo (Supports both GUI and CLI modes)
 echo.
 
 pyinstaller ^
     --name="MicroBridge" ^
-    --onedir ^
-    --windowed ^
-    --icon="The_Source_Code\MicroBridge_Icon.ico" ^
-    --version-file="The_Source_Code\version_info.txt" ^
-    --add-data="The_Source_Code\MicroBridge_Icon.ico;." ^
+    --onefile ^
+    --console ^
     --distpath="dist" ^
     --workpath="build" ^
     --noconfirm ^
-    "The_Source_Code\MicroBridge.py"
+    "src\MicroBridge\main.py"
 
 if %errorlevel% neq 0 (
     echo.
@@ -57,10 +54,10 @@ echo.
 echo ============================================================
 echo  DONE: Build successful!
 echo ============================================================
-echo Location: dist\MicroBridge\MicroBridge.exe
+echo Location: dist\MicroBridge.exe
 echo.
 echo Usage:
-echo   - Double-click: Launches GUI
-echo   - Terminal: MicroBridge.exe --cli file.ndpa
+echo   - Double-click: Launches GUI automatically
+echo   - Terminal: MicroBridge.exe filename.ndpa
 echo ============================================================
 pause

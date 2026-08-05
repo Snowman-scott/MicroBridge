@@ -31,7 +31,7 @@ Option 1: Usage via the GUI (graphical user interface)
 Install it first
 and either run
 ```zsh
-microbridge --gui
+microbridge
 ```
 In your terminal and it will open up
 Or use the desktop icon / entry to open the program
@@ -57,6 +57,13 @@ You can use both flags with each other
 ```zsh
 microbridge -b 'path/to/.ndpa/dir' -o 'path/to/output/dir'
 ```
+
+You can also run 
+```zsh
+microbridge --help
+```
+This shows you all the commands and a quick run down of what they do
+
 ---
 # Tests
 There is information about running the tests locally in the tests directory of the REPO
