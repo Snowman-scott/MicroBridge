@@ -1,6 +1,14 @@
+:<<"::CMDLITERAL"
+@echo off
+goto :WINDOWS_MODE
+::CMDLITERAL
+echo [Mac/Linux Detected] Forwarding build script to Wine...
+wine cmd /c "%~nx0" 2>nul || wine cmd /c "$0"
+exit
+
+:WINDOWS_MODE
 @echo off
 SETLOCAL EnableDelayedExpansion
-
 echo ============================================================
 echo  MicroBridge: Unified Test ^& Build
 echo ============================================================
