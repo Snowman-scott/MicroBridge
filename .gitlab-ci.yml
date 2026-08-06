@@ -31,29 +31,19 @@ test-fedora:
   before_script:
     - dnf install -y python3 python3-pip
 
-test-windows:
-  variables:
-    PYTHONIOENCODING: "utf-8"
-  stage: test
+test-and-build-windows:
+  stage: build
   tags:
     - saas-windows-medium-amd64
   script:
     - python --version
     - pip install -e .
-    - python -m unittest discover -s tests -p "test_*.py" -v
-
-# Would add macOS test but I am not paying for that T_T
-
-build-windows:
-  stage: build
-  needs: ["test-windows"]
-  tags:
-    - saas-windows-medium-amd64
-  script:
-    - pip install -e .
     - pip install pyinstaller
+    - python -m unittest discover -s tests -p "test_*.py" -v
     - .\Build_From_Source\Build_Scripts\build_windows.bat
   artifacts:
     paths:
       - dist/MicroBridge.exe
     expire_in: 1 week
+
+# Would add macOS test but I am not paying for that T_T
