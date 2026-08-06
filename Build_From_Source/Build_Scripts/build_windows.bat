@@ -68,4 +68,4 @@ echo Usage:
 echo   - Double-click: Launches GUI automatically
 echo   - Terminal: MicroBridge.exe filename.ndpa
 echo ============================================================
-pause
+if not defined CI pause
