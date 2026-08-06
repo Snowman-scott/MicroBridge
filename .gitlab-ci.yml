@@ -1,5 +1,6 @@
 stages:
   - test
+  - build
 
 .test_template:
   script:
@@ -42,3 +43,17 @@ test-windows:
     - python -m unittest discover -s tests -p "test_*.py" -v
 
 # Would add macOS test but I am not paying for that T_T
+
+build-windows:
+  stage: build
+  needs: ["test-windows"]
+  tags:
+    - saas-windows-medium-amd64
+  script:
+    - pip install -e .
+    - pip install pyinstaller
+    - .\Build_From_Source\Build_Scripts\build_windows.bat
+  artifacts:
+    paths:
+      - dist/MicroBridge.exe
+    expire_in: 1 week
