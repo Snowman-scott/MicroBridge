@@ -1,3 +1,4 @@
+import sys
 import threading
 from pathlib import Path
 from tkinter import filedialog
@@ -17,12 +18,24 @@ class App(ctk.CTk):
         self.geometry("1050x650")
         self.minsize(850, 450)
 
+        self._set_window_icon()
+
         self.input_files: list[str] = []
         self.output_dir: str | None = None
         self._converting = False
 
         self._setup_ui()
         self._log("ready — pick some files")
+
+    def _set_window_icon(self):
+        if sys.platform != "win32":
+            return
+        base = getattr(sys, "_MEIPASS", None)
+        if not base:
+            return
+        icon = Path(base) / "MicroBridge_Icon.ico"
+        if icon.exists():
+            self.iconbitmap(str(icon))
 
     def _setup_ui(self):
         self.grid_columnconfigure(0, weight=2, uniform="col")

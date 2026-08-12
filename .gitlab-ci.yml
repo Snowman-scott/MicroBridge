@@ -43,7 +43,8 @@ test-and-build-windows:
     - .\Build_From_Source\Build_Scripts\build_windows.bat
   artifacts:
     paths:
-      - dist/MicroBridge.exe
+      - dist/MicroBridge/
+      - dist/MicroBridge_CLI/
     expire_in: 1 week
 
 # Would add macOS test but I am not paying for that T_T
