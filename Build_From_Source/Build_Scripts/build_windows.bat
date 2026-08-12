@@ -48,7 +48,7 @@ echo.
 pyinstaller ^
     --name="MicroBridge" ^
     --onedir ^
-    --console ^
+    --windowed ^
     --icon="src\MicroBridge_Icon.ico" ^
     --version-file="Build_From_Source\Build_Scripts\version_info.txt" ^
     --add-data="src\MicroBridge_Icon.ico;." ^
@@ -64,6 +64,11 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
+REM --- Step 4: Ship CLI shim alongside the exe ---
+echo.
+echo [4/4] Copying CLI shim next to the exe...
+copy /y "Build_From_Source\Build_Scripts\microbridge.cmd" "dist\MicroBridge\microbridge.cmd" >nul
+
 echo.
 echo ============================================================
 echo  DONE: Build successful!
@@ -71,7 +76,8 @@ echo ============================================================
 echo Location: dist\MicroBridge\MicroBridge.exe
 echo.
 echo Usage:
-echo   - Double-click: Launches GUI automatically (console hides itself)
-echo   - Terminal: MicroBridge.exe filename.ndpa
+echo   - Double-click MicroBridge.exe: Launches GUI (no console flash)
+echo   - Terminal CLI: microbridge.cmd filename.ndpa
+echo     (use the .cmd so cmd.exe waits for the conversion to finish)
 echo ============================================================
 if not defined CI pause
