@@ -44,7 +44,6 @@ test-and-build-windows:
   artifacts:
     paths:
       - dist/MicroBridge/
-      - dist/MicroBridge_CLI/
     expire_in: 1 week
 
 # Would add macOS test but I am not paying for that T_T
