@@ -1,10 +1,12 @@
 # MicroBridge
 MicroBridge is a tool that allows file conversion between Slide annotation software like NDP.view2 to an XML format that Leica Microdissection (LMD) microscopes support.  
 
+---
 # Purpose
 Scientists annotate regions of interest in software like NDP.view2, They would then have to re-draw those same annotations in the software for the LMDs.  
 MicroBridge takes the annotation files from NDP.view2 and converts them into a format that the LMD can understand, This gives the scientists more time to do experiments rather than annotating files for the 2nd time.
 
+---
 # Installation
 To install the package do one of the following:
 
@@ -21,6 +23,7 @@ Then:
 pip install -e .
 ```
 
+---
 # Usage
 There are 2 ways to use MicroBridge
 Option 1: Usage via the GUI (graphical user interface)
@@ -73,6 +76,7 @@ python run_tests.py
 ```
 to set up the venv and run the tests
 
+---
 ## ndpa -> LMD(xml) example
 A raw ndpa looks like this:
 ```xml
@@ -117,6 +121,7 @@ This example above is cut down for length reasons
 If you want to see a real world example and the full example above you can look here:
 [ndpa --> LMD(xml) examples](ndpa_to_LMD_examples/)
 
+---
 ## Codebase Layout
 ```
 src/
@@ -148,6 +153,7 @@ run_tests.py
 
 ```
 
+---
 # License
 This project is licensed under the [GNU GPLv3.0 License](LICENSE)
 This is important as it support copyleft! and Free software!
