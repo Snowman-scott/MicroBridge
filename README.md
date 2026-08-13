@@ -2,12 +2,8 @@
 MicroBridge is a tool that allows file conversion between Slide annotation software like NDP.view2 to an XML format that Leica Microdissection (LMD) microscopes support.  
 
 # Purpose
-Scientists annotate regions of interest in Software like NDP.view2, They Would then have to re-draw those same annotations on the software for the LMDs.  
-MicroBridge Takes the Annotation files from NDP.view2 and converts them into a format that the LMD can understand, This gives the scientists more time to do experiments rather than annotating files for the 2nd time.
-
-## More will be added later :3
-
-AGH DOCKS T_T
+Scientists annotate regions of interest in software like NDP.view2, They would then have to re-draw those same annotations in the software for the LMDs.  
+MicroBridge takes the annotation files from NDP.view2 and converts them into a format that the LMD can understand, This gives the scientists more time to do experiments rather than annotating files for the 2nd time.
 
 # Installation
 To install the package do one of the following:
@@ -22,14 +18,14 @@ python3 -m venv .venv
 ```
 Then:
 ```zsh
-pip install -c .
+pip install -e .
 ```
 
 # Usage
 There are 2 ways to use MicroBridge
 Option 1: Usage via the GUI (graphical user interface)
 Install it first
-and either run
+And either run
 ```zsh
 microbridge
 ```
@@ -72,10 +68,54 @@ You can run this
 ```zsh
 python -m venv .venv
 source .venv/bin/activate
-pip install -c .
+pip install -e .
 python run_tests.py
 ```
 to set up the venv and run the tests
+
+## ndpa -> LMD(xml) example
+A raw ndpa looks like this:
+```xml
+<!-- Calibration Point 3 - Circle annotation -->
+<ndpviewstate id="3">
+  <title>Calibration_3</title>
+  <annotation type="circle">
+    <x>200000000</x>
+    <y>300000000</y>
+    <radius>5000000</radius>
+  </annotation>
+</ndpviewstate>
+
+<!-- RULER - should be SKIPPED -->
+<ndpviewstate id="4">
+  <title>Measurement_1</title>
+  <annotation type="linearmeasure" displayname="AnnotateRuler" color="#ff0000">
+    <x1>100000000</x1>
+    <y1>100000000</y1>
+    <x2>200000000</x2>
+    <y2>200000000</y2>
+  </annotation>
+</ndpviewstate>
+```
+MicroBridge (currently) converts this to an XML for the LMD's which look like this:
+```xml
+  <X_CalibrationPoint_3>200000</X_CalibrationPoint_3>
+  <Y_CalibrationPoint_3>300000</Y_CalibrationPoint_3>
+  <ShapeCount>2</ShapeCount>
+  <Shape_1>
+    <PointCount>3</PointCount>
+    <X_1>300000</X_1>
+    <Y_1>400000</Y_1>
+    <X_2>350000</X_2>
+    <Y_2>400000</Y_2>
+    <X_3>350000</X_3>
+    <Y_3>450000</Y_3>
+  </Shape_1>
+```
+This example above is cut down for length reasons
+
+If you want to see a real world example and the full example above you can look here:
+[ndpa --> LMD(xml) examples](ndpa_to_LMD_examples/)
 
 ## Codebase Layout
 ```
@@ -109,7 +149,5 @@ run_tests.py
 ```
 
 # License
-This project is licensed under the GNU GPLv3.0 License
+This project is licensed under the [GNU GPLv3.0 License](LICENSE)
 This is important as it support copyleft! and Free software!
-
-## More may be added later
