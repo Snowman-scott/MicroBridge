@@ -2,21 +2,7 @@ stages:
   - test
   - build
 
-.banner: &banner |
-  cat <<'EOF'
-  ___  ____               ______      _     _            
-  |  \/  (_)              | ___ \    (_)   | |           
-  | .  . |_  ___ _ __ ___ | |_/ /_ __ _  __| | __ _  ___ 
-  | |\/| | |/ __| '__/ _ \| ___ \ '__| |/ _` |/ _` |/ _ \
-  | |  | | | (__| | | (_) | |_/ / |  | | (_| | (_| |  __/
-  \_|  |_/_|\___|_|  \___/\____/|_|  |_|\__,_|\__, |\___|
-                                               __/ |     
-                                              |___/ 
-  EOF
-
 .test_template:
-  before_script:
-    - *banner
   script:
     - python3 --version
     - pip install -e .
@@ -36,7 +22,6 @@ test-arch:
   extends: .test_template
   image: archlinux:latest
   before_script:
-    - *banner
     - pacman -Syu --noconfirm python3 python-pip
     - python3 -m venv .venv
     - source .venv/bin/activate
@@ -45,7 +30,6 @@ test-fedora:
   extends: .test_template
   image: fedora:latest
   before_script:
-    - *banner
     - dnf install -y python3 python3-pip
 
 typecheck:
@@ -61,8 +45,6 @@ test-and-build-windows:
   stage: build
   tags:
     - saas-windows-medium-amd64
-  before_script:
-    - *banner
   script:
     - python --version
     - pip install -e .
@@ -77,8 +59,6 @@ test-and-build-windows:
 test-and-build-linux:
   stage: build
   image: python:3.12-slim
-  before_script:
-    - *banner
   script:
     - python3 --version
     - pip install -e .

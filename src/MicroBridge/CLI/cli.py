@@ -7,6 +7,17 @@ from xml.parsers.expat import ExpatError
 
 from MicroBridge.Core.core import convert_ndpa_to_lmd_core, derive_output_filename
 
+BANNER = r"""
+  ___  ____               ______      _     _            
+  |  \/  (_)              | ___ \    (_)   | |           
+  | .  . |_  ___ _ __ ___ | |_/ /_ __ _  __| | __ _  ___ 
+  | |\/| | |/ __| '__/ _ \| ___ \ '__| |/ _` |/ _` |/ _ \
+  | |  | | | (__| | | (_) | |_/ / |  | | (_| | (_| |  __/
+  \_|  |_/_|\___|_|  \___/\____/|_|  |_|\__,_|\__, |\___|
+                                               __/ |     
+                                              |___/ 
+"""
+
 def convert_files(files, output):
     successful = 0
     failures = []
@@ -41,6 +52,7 @@ def find_ndpa_files(directory):
 @click.option('-o', '--output',type=click.Path(), nargs=1, required=False, help="Select an output directory for the converted '.ndpa' files to end up in.")
 @click.argument("files", nargs=-1, required=False)
 def run(ctx, files, batch, output):
+    click.echo(BANNER)
     if not files and not batch:
         click.echo(ctx.get_help())
         sys.exit(1)
