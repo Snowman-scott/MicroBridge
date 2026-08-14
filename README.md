@@ -40,9 +40,9 @@ pip install -e .
 ---
 
 # Usage
-There are 2 ways to use MicroBridge
-Option 1: Usage via the GUI (graphical user interface)
-Install it first
+There are 2 ways to use MicroBridge  
+Option 1: Usage via the GUI (graphical user interface)  
+Install it first  
 And either run
 ```zsh
 microbridge
