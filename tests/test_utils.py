@@ -1,18 +1,21 @@
-import unittest
 from MicroBridge.utils import should_use_cli
 
-class TestShouldUseCli(unittest.TestCase):
-    def test_no_args_returns_false(self):
-        self.assertFalse(should_use_cli([]))
 
-    def test_dash_dash_gui_returns_false(self):
-        self.assertFalse(should_use_cli(["--gui"]))
+def test_no_args_returns_false():
+    assert should_use_cli([]) is False
 
-    def test_case_insensitive(self):
-        self.assertFalse(should_use_cli(["--GUI"]))
 
-    def test_other_args_still_returns_true(self):
-        self.assertTrue(should_use_cli(["file.ndpa", "-o", "out/"]))
+def test_dash_dash_gui_returns_false():
+    assert should_use_cli(["--gui"]) is False
 
-    def test_gui_flag_among_other_args(self):
-        self.assertFalse(should_use_cli(["file.ndpa", "--gui"]))
+
+def test_case_insensitive():
+    assert should_use_cli(["--GUI"]) is False
+
+
+def test_other_args_still_returns_true():
+    assert should_use_cli(["file.ndpa", "-o", "out/"]) is True
+
+
+def test_gui_flag_among_other_args():
+    assert should_use_cli(["file.ndpa", "--gui"]) is False

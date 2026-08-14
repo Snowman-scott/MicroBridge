@@ -2,6 +2,7 @@ import sys
 import threading
 from pathlib import Path
 from tkinter import filedialog
+from typing import Any
 
 import customtkinter as ctk
 
@@ -23,6 +24,13 @@ class App(ctk.CTk):
         self.input_files: list[str] = []
         self.output_dir: str | None = None
         self._converting = False
+
+        self.type_var: Any = None
+        self.files_label: Any = None
+        self.files_text: Any = None
+        self.output_label: Any = None
+        self.convert_btn: Any = None
+        self.log_text: Any = None
 
         self._setup_ui()
         self._log("ready — pick some files")

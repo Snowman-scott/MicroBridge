@@ -2,13 +2,28 @@ stages:
   - test
   - build
 
+.banner: &banner |
+  cat <<'EOF'
+  ___  ____               ______      _     _            
+  |  \/  (_)              | ___ \    (_)   | |           
+  | .  . |_  ___ _ __ ___ | |_/ /_ __ _  __| | __ _  ___ 
+  | |\/| | |/ __| '__/ _ \| ___ \ '__| |/ _` |/ _` |/ _ \
+  | |  | | | (__| | | (_) | |_/ / |  | | (_| | (_| |  __/
+  \_|  |_/_|\___|_|  \___/\____/|_|  |_|\__,_|\__, |\___|
+                                               __/ |     
+                                              |___/ 
+  EOF
+
 .test_template:
+  before_script:
+    - *banner
   script:
     - python3 --version
     - pip install -e .
-    - python3 -m unittest discover -s tests -p "test_*.py" -v
+    - pip install pytest
+    - pytest tests -v
 
-# Matrix for Python Versions 3.9 through 3.14
+# Matrix for Python Versions 3.11 through 3.14
 test-python-versions:
   extends: .test_template
   image: python:${PYTHON_VERSION}-slim
@@ -21,6 +36,7 @@ test-arch:
   extends: .test_template
   image: archlinux:latest
   before_script:
+    - *banner
     - pacman -Syu --noconfirm python3 python-pip
     - python3 -m venv .venv
     - source .venv/bin/activate
@@ -29,18 +45,30 @@ test-fedora:
   extends: .test_template
   image: fedora:latest
   before_script:
+    - *banner
     - dnf install -y python3 python3-pip
+
+typecheck:
+  extends: .test_template
+  image: python:3.12-slim
+  script:
+    - python3 --version
+    - pip install -e .
+    - pip install basedpyright
+    - basedpyright
 
 test-and-build-windows:
   stage: build
   tags:
     - saas-windows-medium-amd64
+  before_script:
+    - *banner
   script:
     - python --version
     - pip install -e .
-    - pip install pyinstaller
-    - python -m unittest discover -s tests -p "test_*.py" -v
-    - .\Build_From_Source\Build_Scripts\build_windows.bat
+    - pip install pytest pyinstaller
+    - pytest tests -v
+    - .\Build-Scripts\build_windows.bat
   artifacts:
     paths:
       - dist/MicroBridge/

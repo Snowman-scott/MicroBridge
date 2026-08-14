@@ -1,5 +1,14 @@
 from xml.dom import minidom
+from xml.dom.minidom import Text
 from pathlib import Path
+
+
+def _element_text(element: minidom.Element) -> str:
+    first_child = element.firstChild
+    if not isinstance(first_child, Text):
+        raise ValueError(f"<{element.tagName}> element has no text content")
+    return first_child.data
+
 
 def derive_output_filename(input_filename: str) -> str:
     p = Path(input_filename)
@@ -30,8 +39,8 @@ def convert_ndpa_to_lmd_core(input_filename: str, output_filename: str) -> None:
 
             if x_elems and y_elems:
                 # Data is in nanometers. Divide by 1000 to get micrometers
-                x_um = int(round(float(x_elems[0].firstChild.data) / 1000))
-                y_um = int(round(float(y_elems[0].firstChild.data) / 1000))
+                x_um = int(round(float(_element_text(x_elems[0])) / 1000))
+                y_um = int(round(float(_element_text(y_elems[0])) / 1000))
 
         if x_um is None: # Method 2: Fallback to Freehand points
             pointlist = region.getElementsByTagName("point")
@@ -39,8 +48,8 @@ def convert_ndpa_to_lmd_core(input_filename: str, output_filename: str) -> None:
                 x_elem = pointlist[0].getElementsByTagName("x")[0]
                 y_elem = pointlist[0].getElementsByTagName("y")[0]
 
-                x_um = int(round(float(x_elem.firstChild.data) / 1000))
-                y_um = int(round(float(y_elem.firstChild.data) / 1000))
+                x_um = int(round(float(_element_text(x_elem)) / 1000))
+                y_um = int(round(float(_element_text(y_elem)) / 1000))
 
         if x_um is None:
             raise ValueError(f"Calibration point {cal_idx + 1} came back malformed or incorrectly made")
@@ -68,9 +77,9 @@ def convert_ndpa_to_lmd_core(input_filename: str, output_filename: str) -> None:
                     x_elem = point.getElementsByTagName("x")[0]
                     y_elem = point.getElementsByTagName("y")[0]
 
-                    x_um = int(round(float(x_elem.firstChild.data) / 1000))
-                    y_um = int(round(float(y_elem.firstChild.data) / 1000))
-                except (IndexError, AttributeError) as e:
+                    x_um = int(round(float(_element_text(x_elem)) / 1000))
+                    y_um = int(round(float(_element_text(y_elem)) / 1000))
+                except (IndexError, AttributeError, ValueError) as e:
                     raise ValueError(f"Shape {shape_num} data malformed at point {point_idx + 1}") from e
                 points.append((x_um, y_um))
 

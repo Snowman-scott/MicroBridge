@@ -1,57 +1,52 @@
 #!/usr/bin/env python3
-import contextlib
-import importlib.util
-import io
 import sys
-import unittest
 from pathlib import Path
 
+import pytest
 
-def _load_and_run_tests(path, verbosity=2):
-    spec = importlib.util.spec_from_file_location(path.stem, path)
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    loader = unittest.TestLoader()
-    suite = loader.loadTestsFromModule(mod)
 
-    buf = io.StringIO()
-    runner = unittest.TextTestRunner(stream=buf, verbosity=verbosity)
-    with contextlib.redirect_stdout(io.StringIO()):
-        with contextlib.redirect_stderr(io.StringIO()):
-            result = runner.run(suite)
+class _Reporter:
+    def __init__(self):
+        self.files = {}
 
-    return result, buf.getvalue()
+    def pytest_runtest_logreport(self, report):
+        if report.when != "call":
+            return
+        fname = Path(report.nodeid.split("::")[0]).name
+        entry = self.files.setdefault(fname, {"passed": 0, "failed": 0, "skipped": 0, "total": 0})
+        entry["total"] += 1
+        if report.skipped:
+            entry["skipped"] += 1
+        elif report.failed:
+            entry["failed"] += 1
+        else:
+            entry["passed"] += 1
 
 
 def main():
     test_dir = Path(__file__).parent / "tests"
-    files = sorted(test_dir.glob("test_*.py"))
+    reporter = _Reporter()
+    exit_code = pytest.main([str(test_dir), "-v", "--tb=short"], plugins=[reporter])
 
+    # ── Summary table ────────────────────────────────────
     results = []
     all_passed = 0
     all_failed = 0
     all_total = 0
 
-    for f in files:
-        result, output = _load_and_run_tests(f)
-        total = result.testsRun
-        failed = len(result.failures) + len(result.errors)
-        passed = total - failed
-
+    for f in sorted(test_dir.glob("test_*.py")):
+        entry = reporter.files.get(f.name, {"passed": 0, "failed": 0, "skipped": 0, "total": 0})
         results.append({
             "file": f.name,
-            "total": total,
-            "passed": passed,
-            "failed": failed,
-            "ok": failed == 0,
+            "total": entry["total"],
+            "passed": entry["passed"],
+            "failed": entry["failed"],
+            "ok": entry["failed"] == 0 and entry["total"] > 0,
+            "empty": entry["total"] == 0,
         })
-        all_total += total
-        all_passed += passed
-        all_failed += failed
-
-        print(output, end="")
-
-    # ── Summary table ────────────────────────────────────
+        all_total += entry["total"]
+        all_passed += entry["passed"]
+        all_failed += entry["failed"]
 
     def cell(text, w):
         return (" " + text).ljust(w)
@@ -63,17 +58,20 @@ def main():
     print("  " + "╠" + "═" * W + "╬" + "═" * 8 + "╬" + "═" * 8 + "╣")
     for r in results:
         label = r["file"].replace(".py", "")
-        icon = " ✅" if r["ok"] else " ❌"
+        if r["empty"]:
+            icon = " ○"
+        else:
+            icon = " ✅" if r["ok"] else " ❌"
         count = f"{r['passed']}/{r['total']}"
         print(f"  ║{cell(label, W)}║{cell(count, 8)}║{cell(icon, 8)}║")
     print("  " + "╠" + "═" * W + "╬" + "═" * 8 + "╬" + "═" * 8 + "╣")
-    icon = " ✅" if all_failed == 0 else " ❌"
+    icon = " ✅" if all_failed == 0 and all_total > 0 else " ❌"
     count = f"{all_passed}/{all_total}"
     print(f"  ║{cell('Total', W)}║{cell(count, 8)}║{cell(icon, 8)}║")
     print("  " + "╚" + "═" * W + "╩" + "═" * 8 + "╩" + "═" * 8 + "╝")
     print()
 
-    sys.exit(1 if all_failed > 0 else 0)
+    sys.exit(1 if all_failed > 0 else exit_code)
 
 
 if __name__ == "__main__":

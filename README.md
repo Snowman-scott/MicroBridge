@@ -1,4 +1,14 @@
 # MicroBridge
+```zsh
+___  ____               ______      _     _            
+|  \/  (_)              | ___ \    (_)   | |           
+| .  . |_  ___ _ __ ___ | |_/ /_ __ _  __| | __ _  ___ 
+| |\/| | |/ __| '__/ _ \| ___ \ '__| |/ _` |/ _` |/ _ \
+| |  | | | (__| | | (_) | |_/ / |  | | (_| | (_| |  __/
+\_|  |_/_|\___|_|  \___/\____/|_|  |_|\__,_|\__, |\___|
+                                             __/ |     
+                                            |___/      
+```
 MicroBridge is a tool that allows file conversion between Slide annotation software like NDP.view2 to an XML format that Leica Microdissection (LMD) microscopes support.  
 
 ---
@@ -71,10 +81,10 @@ You can run this
 ```zsh
 python -m venv .venv
 source .venv/bin/activate
-pip install -e .
-python run_tests.py
+pip install -e .[dev]
+pytest
 ```
-to set up the venv and run the tests
+to set up the venv and run the tests (or use `python run_tests.py` for the summary table output)
 
 ---
 ## ndpa -> LMD(xml) example

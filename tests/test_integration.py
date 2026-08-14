@@ -1,11 +1,12 @@
-import unittest
-import tempfile
-import shutil
 from pathlib import Path
 from xml.dom import minidom
+
+import pytest
 from click.testing import CliRunner
 
 from MicroBridge.CLI.cli import run
+
+from .helpers import element_text
 
 VALID_NDPA = """<?xml version="1.0" encoding="utf-8"?>
 <annotations>
@@ -44,103 +45,85 @@ VALID_NDPA = """<?xml version="1.0" encoding="utf-8"?>
 """
 
 
-class TestIntegration(unittest.TestCase):
-    def setUp(self):
-        self.tmp = tempfile.mkdtemp()
-        self.runner = CliRunner()
+@pytest.fixture
+def runner():
+    return CliRunner()
 
-    def tearDown(self):
-        shutil.rmtree(self.tmp)
 
-    def _write_ndpa(self, name: str) -> str:
-        p = Path(self.tmp) / name
-        p.write_text(VALID_NDPA, encoding="utf-8")
-        return str(p)
+def _write_ndpa(tmp_path: Path, name: str) -> str:
+    p = tmp_path / name
+    p.write_text(VALID_NDPA, encoding="utf-8")
+    return str(p)
 
-    def _parse_xml(self, path: Path) -> minidom.Document:
-        return minidom.parse(str(path))
 
-    def test_single_file_via_cli_produces_valid_lmd_xml(self):
-        self._write_ndpa("slide1.ndpa")
-        result = self.runner.invoke(run, [str(Path(self.tmp) / "slide1.ndpa")])
-        self.assertEqual(result.exit_code, 0)
+def _parse_xml(path: Path) -> minidom.Document:
+    return minidom.parse(str(path))
 
-        out = Path(self.tmp) / "slide1_LMD.xml"
-        self.assertTrue(out.exists())
-        dom = self._parse_xml(out)
 
-        self.assertEqual(
-            dom.getElementsByTagName("GlobalCoordinates")[0].firstChild.data, "1"
-        )
-        self.assertEqual(
-            dom.getElementsByTagName("X_CalibrationPoint_1")[0].firstChild.data,
-            "100000",
-        )
-        self.assertEqual(
-            dom.getElementsByTagName("ShapeCount")[0].firstChild.data, "2"
-        )
-        self.assertEqual(len(dom.getElementsByTagName("Shape_1")), 1)
-        self.assertEqual(len(dom.getElementsByTagName("Shape_2")), 1)
+def test_single_file_via_cli_produces_valid_lmd_xml(runner, tmp_path):
+    _write_ndpa(tmp_path, "slide1.ndpa")
+    result = runner.invoke(run, [str(tmp_path / "slide1.ndpa")])
+    assert result.exit_code == 0
 
-    def test_batch_converts_multiple_files(self):
-        self._write_ndpa("a.ndpa")
-        self._write_ndpa("b.ndpa")
-        result = self.runner.invoke(run, ["--batch", self.tmp])
-        self.assertEqual(result.exit_code, 0)
-        self.assertTrue((Path(self.tmp) / "a_LMD.xml").exists())
-        self.assertTrue((Path(self.tmp) / "b_LMD.xml").exists())
+    out = tmp_path / "slide1_LMD.xml"
+    assert out.exists()
+    dom = _parse_xml(out)
 
-    def test_output_flag_routes_files_to_custom_directory(self):
-        out_dir = Path(self.tmp) / "custom_out"
-        out_dir.mkdir()
-        self._write_ndpa("data.ndpa")
-        result = self.runner.invoke(
-            run, ["--batch", self.tmp, "--output", str(out_dir)]
-        )
-        self.assertEqual(result.exit_code, 0)
-        self.assertTrue((out_dir / "data_LMD.xml").exists())
-        self.assertFalse((Path(self.tmp) / "data_LMD.xml").exists())
+    assert element_text(dom, "GlobalCoordinates") == "1"
+    assert element_text(dom, "X_CalibrationPoint_1") == "100000"
+    assert element_text(dom, "ShapeCount") == "2"
+    assert len(dom.getElementsByTagName("Shape_1")) == 1
+    assert len(dom.getElementsByTagName("Shape_2")) == 1
 
-    def test_output_xml_uses_realistic_coordinates(self):
-        self._write_ndpa("realistic.ndpa")
-        self.runner.invoke(run, [str(Path(self.tmp) / "realistic.ndpa")])
-        dom = self._parse_xml(Path(self.tmp) / "realistic_LMD.xml")
 
-        for i in range(1, 4):
-            x = int(
-                dom.getElementsByTagName(f"X_CalibrationPoint_{i}")[
-                    0
-                ].firstChild.data
-            )
-            y = int(
-                dom.getElementsByTagName(f"Y_CalibrationPoint_{i}")[
-                    0
-                ].firstChild.data
-            )
-            self.assertGreater(x, 0)
-            self.assertGreater(y, 0)
+def test_batch_converts_multiple_files(runner, tmp_path):
+    _write_ndpa(tmp_path, "a.ndpa")
+    _write_ndpa(tmp_path, "b.ndpa")
+    result = runner.invoke(run, ["--batch", str(tmp_path)])
+    assert result.exit_code == 0
+    assert (tmp_path / "a_LMD.xml").exists()
+    assert (tmp_path / "b_LMD.xml").exists()
 
-        shape_count = int(
-            dom.getElementsByTagName("ShapeCount")[0].firstChild.data
-        )
-        self.assertEqual(shape_count, 2)
-        for s in range(1, shape_count + 1):
-            shape_el = dom.getElementsByTagName(f"Shape_{s}")[0]
-            point_count = int(
-                shape_el.getElementsByTagName("PointCount")[0].firstChild.data
-            )
-            self.assertGreater(point_count, 0)
 
-    def test_failure_exit_code_on_malformed_file(self):
-        bad = Path(self.tmp) / "bad.ndpa"
-        bad.write_text(
-            '<?xml version="1.0"?><annotations>'
-            '<ndpviewstate><annotation type="circle"><x>100000000</x><y>200000000</y></annotation></ndpviewstate>'
-            '<ndpviewstate><annotation type="circle"><x>150000000</x><y>250000000</y></annotation></ndpviewstate>'
-            '<ndpviewstate><annotation type="circle"><x>200000000</x><y>300000000</y></annotation></ndpviewstate>'
-            '<ndpviewstate><annotation type="freehand"><pointlist><point><x>100</x></point></pointlist></annotation></ndpviewstate>'
-            "</annotations>",
-            encoding="utf-8",
-        )
-        result = self.runner.invoke(run, [str(bad)])
-        self.assertNotEqual(result.exit_code, 0)
+def test_output_flag_routes_files_to_custom_directory(runner, tmp_path):
+    out_dir = tmp_path / "custom_out"
+    out_dir.mkdir()
+    _write_ndpa(tmp_path, "data.ndpa")
+    result = runner.invoke(run, ["--batch", str(tmp_path), "--output", str(out_dir)])
+    assert result.exit_code == 0
+    assert (out_dir / "data_LMD.xml").exists()
+    assert not (tmp_path / "data_LMD.xml").exists()
+
+
+def test_output_xml_uses_realistic_coordinates(runner, tmp_path):
+    _write_ndpa(tmp_path, "realistic.ndpa")
+    runner.invoke(run, [str(tmp_path / "realistic.ndpa")])
+    dom = _parse_xml(tmp_path / "realistic_LMD.xml")
+
+    for i in range(1, 4):
+        x = int(element_text(dom, f"X_CalibrationPoint_{i}"))
+        y = int(element_text(dom, f"Y_CalibrationPoint_{i}"))
+        assert x > 0
+        assert y > 0
+
+    shape_count = int(element_text(dom, "ShapeCount"))
+    assert shape_count == 2
+    for s in range(1, shape_count + 1):
+        shape_el = dom.getElementsByTagName(f"Shape_{s}")[0]
+        point_count = int(element_text(shape_el, "PointCount"))
+        assert point_count > 0
+
+
+def test_failure_exit_code_on_malformed_file(runner, tmp_path):
+    bad = tmp_path / "bad.ndpa"
+    bad.write_text(
+        '<?xml version="1.0"?><annotations>'
+        '<ndpviewstate><annotation type="circle"><x>100000000</x><y>200000000</y></annotation></ndpviewstate>'
+        '<ndpviewstate><annotation type="circle"><x>150000000</x><y>250000000</y></annotation></ndpviewstate>'
+        '<ndpviewstate><annotation type="circle"><x>200000000</x><y>300000000</y></annotation></ndpviewstate>'
+        '<ndpviewstate><annotation type="freehand"><pointlist><point><x>100</x></point></pointlist></annotation></ndpviewstate>'
+        "</annotations>",
+        encoding="utf-8",
+    )
+    result = runner.invoke(run, [str(bad)])
+    assert result.exit_code != 0

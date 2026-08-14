@@ -1,7 +1,6 @@
-import unittest
-import tempfile
-import shutil
 from pathlib import Path
+
+import pytest
 from click.testing import CliRunner
 
 from MicroBridge.CLI.cli import convert_files, find_ndpa_files, run
@@ -30,159 +29,160 @@ MALFORMED_SHAPE_NDPA = """<?xml version="1.0"?>
 </annotations>"""
 
 
-class TestConvertFiles(unittest.TestCase):
-    def setUp(self):
-        self.tmp = tempfile.mkdtemp()
-
-    def tearDown(self):
-        shutil.rmtree(self.tmp)
-
-    def _write(self, name: str, content: str = VALID_NDPA) -> str:
-        p = Path(self.tmp) / name
-        p.write_text(content, encoding="utf-8")
-        return str(p)
-
-    def test_all_files_succeed(self):
-        f1 = self._write("a.ndpa")
-        f2 = self._write("b.ndpa")
-        successful, failures = convert_files([f1, f2], output=None)
-        self.assertEqual(successful, 2)
-        self.assertEqual(failures, [])
-
-    def test_wrong_extension_skipped(self):
-        f1 = self._write("a.txt", "not ndpa")
-        successful, failures = convert_files([f1], output=None)
-        self.assertEqual(successful, 0)
-        self.assertEqual(len(failures), 1)
-        self.assertIn("Expected a '.ndpa' file", str(failures[0][1]))
-
-    def test_conversion_failure_reported(self):
-        f1 = self._write("bad.ndpa", MALFORMED_SHAPE_NDPA)
-        successful, failures = convert_files([f1], output=None)
-        self.assertEqual(successful, 0)
-        self.assertEqual(len(failures), 1)
-
-    def test_mix_of_valid_and_invalid(self):
-        f1 = self._write("good.ndpa")
-        f2 = self._write("bad.ndpa", MALFORMED_SHAPE_NDPA)
-        successful, failures = convert_files([f1, f2], output=None)
-        self.assertEqual(successful, 1)
-        self.assertEqual(len(failures), 1)
-
-    def test_empty_file_list(self):
-        successful, failures = convert_files([], output=None)
-        self.assertEqual(successful, 0)
-        self.assertEqual(failures, [])
-
-    def test_output_directory_override(self):
-        out_dir = Path(self.tmp) / "output"
-        out_dir.mkdir()
-        f1 = self._write("a.ndpa")
-        successful, failures = convert_files([f1], output=str(out_dir))
-        self.assertEqual(successful, 1)
-        self.assertTrue((out_dir / "a_LMD.xml").exists())
-
-    def test_output_directory_creates_file_with_lmd_suffix(self):
-        f1 = self._write("data.ndpa")
-        successful, failures = convert_files([f1], output=None)
-        self.assertEqual(successful, 1)
-        self.assertTrue((Path(self.tmp) / "data_LMD.xml").exists())
+@pytest.fixture
+def runner():
+    return CliRunner()
 
 
-class TestFindNdpaFiles(unittest.TestCase):
-    def setUp(self):
-        self.tmp = tempfile.mkdtemp()
-
-    def tearDown(self):
-        shutil.rmtree(self.tmp)
-
-    def test_finds_ndpa_files(self):
-        (Path(self.tmp) / "a.ndpa").touch()
-        (Path(self.tmp) / "b.ndpa").touch()
-        (Path(self.tmp) / "c.txt").touch()
-        files = find_ndpa_files(self.tmp)
-        self.assertEqual(len(files), 2)
-        self.assertTrue(all(f.endswith(".ndpa") for f in files))
-
-    def test_ignores_non_ndpa(self):
-        (Path(self.tmp) / "readme.txt").touch()
-        (Path(self.tmp) / "data.csv").touch()
-        files = find_ndpa_files(self.tmp)
-        self.assertEqual(files, [])
-
-    def test_empty_directory(self):
-        files = find_ndpa_files(self.tmp)
-        self.assertEqual(files, [])
-
-    def test_nonexistent_directory_raises(self):
-        with self.assertRaises(FileNotFoundError):
-            find_ndpa_files("/nonexistent/path")
+def _write(tmp_path: Path, name: str, content: str = VALID_NDPA) -> str:
+    p = tmp_path / name
+    p.write_text(content, encoding="utf-8")
+    return str(p)
 
 
-class TestRunCommand(unittest.TestCase):
-    def setUp(self):
-        self.tmp = tempfile.mkdtemp()
-        self.runner = CliRunner()
+# ── convert_files ────────────────────────────────────────
 
-    def tearDown(self):
-        shutil.rmtree(self.tmp)
+def test_all_files_succeed(tmp_path):
+    f1 = _write(tmp_path, "a.ndpa")
+    f2 = _write(tmp_path, "b.ndpa")
+    successful, failures = convert_files([f1, f2], output=None)
+    assert successful == 2
+    assert failures == []
 
-    def _write(self, name: str, content: str = VALID_NDPA) -> str:
-        p = Path(self.tmp) / name
-        p.write_text(content, encoding="utf-8")
-        return str(p)
 
-    def test_no_args_prints_help_and_exits_1(self):
-        result = self.runner.invoke(run, [])
-        self.assertNotEqual(result.exit_code, 0)
-        self.assertIn("Usage", result.output)
+def test_wrong_extension_skipped(tmp_path):
+    f1 = _write(tmp_path, "a.txt", "not ndpa")
+    successful, failures = convert_files([f1], output=None)
+    assert successful == 0
+    assert len(failures) == 1
+    assert "Expected a '.ndpa' file" in str(failures[0][1])
 
-    def test_both_files_and_batch_errors(self):
-        f1 = self._write("a.ndpa")
-        result = self.runner.invoke(run, [f1, "--batch", self.tmp])
-        self.assertNotEqual(result.exit_code, 0)
-        self.assertIn("cannot have files", result.output)
 
-    def test_single_file_converts_successfully(self):
-        f1 = self._write("sample.ndpa")
-        result = self.runner.invoke(run, [f1])
-        self.assertEqual(result.exit_code, 0)
-        self.assertTrue((Path(self.tmp) / "sample_LMD.xml").exists())
-        self.assertIn("Successfully", result.output)
+def test_conversion_failure_reported(tmp_path):
+    f1 = _write(tmp_path, "bad.ndpa", MALFORMED_SHAPE_NDPA)
+    successful, failures = convert_files([f1], output=None)
+    assert successful == 0
+    assert len(failures) == 1
 
-    def test_batch_directory_converts_all(self):
-        self._write("a.ndpa")
-        self._write("b.ndpa")
-        result = self.runner.invoke(run, ["--batch", self.tmp])
-        self.assertEqual(result.exit_code, 0)
-        self.assertTrue((Path(self.tmp) / "a_LMD.xml").exists())
-        self.assertTrue((Path(self.tmp) / "b_LMD.xml").exists())
 
-    def test_batch_empty_directory_exits_0(self):
-        result = self.runner.invoke(run, ["--batch", self.tmp])
-        self.assertEqual(result.exit_code, 0)
+def test_mix_of_valid_and_invalid(tmp_path):
+    f1 = _write(tmp_path, "good.ndpa")
+    f2 = _write(tmp_path, "bad.ndpa", MALFORMED_SHAPE_NDPA)
+    successful, failures = convert_files([f1, f2], output=None)
+    assert successful == 1
+    assert len(failures) == 1
 
-    def test_output_flag_with_single_file(self):
-        out_dir = Path(self.tmp) / "out"
-        out_dir.mkdir()
-        f1 = self._write("data.ndpa")
-        result = self.runner.invoke(run, [f1, "--output", str(out_dir)])
-        self.assertEqual(result.exit_code, 0)
-        self.assertTrue((out_dir / "data_LMD.xml").exists())
 
-    def test_output_flag_with_batch(self):
-        out_dir = Path(self.tmp) / "out"
-        out_dir.mkdir()
-        self._write("a.ndpa")
-        self._write("b.ndpa")
-        result = self.runner.invoke(run, ["--batch", self.tmp, "--output", str(out_dir)])
-        self.assertEqual(result.exit_code, 0)
-        self.assertTrue((out_dir / "a_LMD.xml").exists())
-        self.assertTrue((out_dir / "b_LMD.xml").exists())
+def test_empty_file_list():
+    successful, failures = convert_files([], output=None)
+    assert successful == 0
+    assert failures == []
 
-    def test_mixed_valid_invalid_reports_failure(self):
-        self._write("good.ndpa")
-        (Path(self.tmp) / "bad.ndpa").write_text(MALFORMED_SHAPE_NDPA, encoding="utf-8")
-        result = self.runner.invoke(run, ["--batch", self.tmp])
-        self.assertNotEqual(result.exit_code, 0)
-        self.assertIn("failed", result.output)
+
+def test_output_directory_override(tmp_path):
+    out_dir = tmp_path / "output"
+    out_dir.mkdir()
+    f1 = _write(tmp_path, "a.ndpa")
+    successful, failures = convert_files([f1], output=str(out_dir))
+    assert successful == 1
+    assert (out_dir / "a_LMD.xml").exists()
+
+
+def test_output_directory_creates_file_with_lmd_suffix(tmp_path):
+    f1 = _write(tmp_path, "data.ndpa")
+    successful, failures = convert_files([f1], output=None)
+    assert successful == 1
+    assert (tmp_path / "data_LMD.xml").exists()
+
+
+# ── find_ndpa_files ──────────────────────────────────────
+
+def test_finds_ndpa_files(tmp_path):
+    (tmp_path / "a.ndpa").touch()
+    (tmp_path / "b.ndpa").touch()
+    (tmp_path / "c.txt").touch()
+    files = find_ndpa_files(str(tmp_path))
+    assert len(files) == 2
+    assert all(f.endswith(".ndpa") for f in files)
+
+
+def test_ignores_non_ndpa(tmp_path):
+    (tmp_path / "readme.txt").touch()
+    (tmp_path / "data.csv").touch()
+    files = find_ndpa_files(str(tmp_path))
+    assert files == []
+
+
+def test_empty_directory(tmp_path):
+    files = find_ndpa_files(str(tmp_path))
+    assert files == []
+
+
+def test_nonexistent_directory_raises():
+    with pytest.raises(FileNotFoundError):
+        find_ndpa_files("/nonexistent/path")
+
+
+# ── run command ──────────────────────────────────────────
+
+def test_no_args_prints_help_and_exits_1(runner):
+    result = runner.invoke(run, [])
+    assert result.exit_code != 0
+    assert "Usage" in result.output
+
+
+def test_both_files_and_batch_errors(runner, tmp_path):
+    f1 = _write(tmp_path, "a.ndpa")
+    result = runner.invoke(run, [f1, "--batch", str(tmp_path)])
+    assert result.exit_code != 0
+    assert "cannot have files" in result.output
+
+
+def test_single_file_converts_successfully(runner, tmp_path):
+    f1 = _write(tmp_path, "sample.ndpa")
+    result = runner.invoke(run, [f1])
+    assert result.exit_code == 0
+    assert (tmp_path / "sample_LMD.xml").exists()
+    assert "Successfully" in result.output
+
+
+def test_batch_directory_converts_all(runner, tmp_path):
+    _write(tmp_path, "a.ndpa")
+    _write(tmp_path, "b.ndpa")
+    result = runner.invoke(run, ["--batch", str(tmp_path)])
+    assert result.exit_code == 0
+    assert (tmp_path / "a_LMD.xml").exists()
+    assert (tmp_path / "b_LMD.xml").exists()
+
+
+def test_batch_empty_directory_exits_0(runner, tmp_path):
+    result = runner.invoke(run, ["--batch", str(tmp_path)])
+    assert result.exit_code == 0
+
+
+def test_output_flag_with_single_file(runner, tmp_path):
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+    f1 = _write(tmp_path, "data.ndpa")
+    result = runner.invoke(run, [f1, "--output", str(out_dir)])
+    assert result.exit_code == 0
+    assert (out_dir / "data_LMD.xml").exists()
+
+
+def test_output_flag_with_batch(runner, tmp_path):
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+    _write(tmp_path, "a.ndpa")
+    _write(tmp_path, "b.ndpa")
+    result = runner.invoke(run, ["--batch", str(tmp_path), "--output", str(out_dir)])
+    assert result.exit_code == 0
+    assert (out_dir / "a_LMD.xml").exists()
+    assert (out_dir / "b_LMD.xml").exists()
+
+
+def test_mixed_valid_invalid_reports_failure(runner, tmp_path):
+    _write(tmp_path, "good.ndpa")
+    (tmp_path / "bad.ndpa").write_text(MALFORMED_SHAPE_NDPA, encoding="utf-8")
+    result = runner.invoke(run, ["--batch", str(tmp_path)])
+    assert result.exit_code != 0
+    assert "failed" in result.output
