@@ -50,7 +50,7 @@ test-and-build-windows:
     - pip install -e .
     - pip install pytest pyinstaller
     - pytest tests -v
-    - .\Build-Scripts\build_windows.bat
+    - .\build-scripts\build_windows.bat
   artifacts:
     paths:
       - dist/MicroBridge/
@@ -65,7 +65,7 @@ test-and-build-linux:
     - python3 --version
     - pip install -e .
     - pip install pyinstaller
-    - chmod +x ./Build-Scripts/build_linux.sh
+    - chmod +x ./build-scripts/build_linux.sh
     - ./Build-Scripts/build_linux.sh
   artifacts:
     paths:
