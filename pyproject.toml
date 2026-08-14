@@ -1,10 +1,13 @@
 [project]
-name = "MicroBridge"
-version = "0.1.2"
+name = "microbridge-lmd"
+version = "0.2.0"
+description = "NDP/CSV to LMD Converter"
+readme = "README.md"
+license = "GPL-3.0-or-later"
+authors = [{name = "Rose Scott"}]
 requires-python = ">=3.11"
 dependencies = [
     "click",
-    "tk",
     "customtkinter"
 ]
 
