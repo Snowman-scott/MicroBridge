@@ -8,14 +8,14 @@ from xml.parsers.expat import ExpatError
 from MicroBridge.Core.core import convert_ndpa_to_lmd_core, derive_output_filename
 
 BANNER = r"""
-  ___  ____               ______      _     _            
-  |  \/  (_)              | ___ \    (_)   | |           
-  | .  . |_  ___ _ __ ___ | |_/ /_ __ _  __| | __ _  ___ 
+  ___  ____               ______      _     _
+  |  \/  (_)              | ___ \    (_)   | |
+  | .  . |_  ___ _ __ ___ | |_/ /_ __ _  __| | __ _  ___
   | |\/| | |/ __| '__/ _ \| ___ \ '__| |/ _` |/ _` |/ _ \
   | |  | | | (__| | | (_) | |_/ / |  | | (_| | (_| |  __/
   \_|  |_/_|\___|_|  \___/\____/|_|  |_|\__,_|\__, |\___|
-                                               __/ |     
-                                              |___/ 
+                                               __/ |
+                                              |___/
 """
 
 def convert_files(files, output):
@@ -35,7 +35,7 @@ def convert_files(files, output):
             failures.append((file, e))
             click.echo(f"Converting the ndpa to an LMD xml failed: {e}", err=True)
         else:
-            click.echo("Successfully converted ndpa into LMD xml :3")
+            click.echo("Successfully converted ndpa into LMD xml")
             successful += 1
     return successful, failures
 
@@ -66,10 +66,10 @@ def run(ctx, files, batch, output):
 
     click.echo("\n\n\n===============================================")
     if successful == len(files):
-        click.secho(f"{successful}/{len(files)} files converted. \nAll files converted fine :3", fg="green",err=False)
+        click.secho(f"{successful}/{len(files)} files converted. \nAll files converted fine", fg="green",err=False)
         sys.exit(0)
     else:
-        click.secho(f"{len(failures)}/{len(files)} failed to convert 3:\nThe files that failed to convert were:\n", fg="red", err=True)
+        click.secho(f"{len(failures)}/{len(files)} failed to convert \nThe files that failed to convert were:\n", fg="red", err=True)
         for filename, err in failures:
             click.secho(f"{filename} errored with: {err}", fg="red", bold=True, err=True)
         sys.exit(1)
