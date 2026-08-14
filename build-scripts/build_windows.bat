@@ -50,7 +50,7 @@ pyinstaller ^
     --onedir ^
     --windowed ^
     --icon="src\MicroBridge_Icon.ico" ^
-    --version-file="Build_From_Source\Build_Scripts\version_info.txt" ^
+    --version-file="build-scripts\version_info.txt" ^
     --add-data="src\MicroBridge_Icon.ico;." ^
     --distpath="dist" ^
     --workpath="build" ^
@@ -67,7 +67,7 @@ if %errorlevel% neq 0 (
 REM --- Step 4: Ship CLI shim alongside the exe ---
 echo.
 echo [4/4] Copying CLI shim next to the exe...
-copy /y "Build_From_Source\Build_Scripts\microbridge.cmd" "dist\MicroBridge\microbridge.cmd" >nul
+copy /y "build-scripts\microbridge.cmd" "dist\MicroBridge\microbridge.cmd" >nul
 
 echo.
 echo ============================================================
