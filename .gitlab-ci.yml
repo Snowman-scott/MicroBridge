@@ -55,24 +55,14 @@ coverage:
         coverage_format: cobertura
         path: coverage.xml
 
-test-and-build-windows:
-  stage: build
-  tags:
-    - saas-windows-medium-amd64
-  script:
-    - python --version
-    - pip install -e .
-    - pip install pytest pyinstaller
-    - pytest tests -v
-    - .\build-scripts\build_windows.bat
-  artifacts:
-    paths:
-      - dist/MicroBridge/
-    expire_in: 1 week
 
 test-and-build-linux:
   stage: build
   image: python:3.12-slim
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: manual
+    - when: on_success
   before_script:
     - apt-get update && apt-get install -y --no-install-recommends binutils
   script:
@@ -85,5 +75,25 @@ test-and-build-linux:
     paths:
       - dist/MicroBridge/
     expire_in: 1 week
+
+test-and-build-windows:
+  stage: build
+  tags:
+    - saas-windows-medium-amd64
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: manual
+    - when: on_success
+  script:
+    - python --version
+    - pip install -e .
+    - pip install pytest pyinstaller
+    - pytest tests -v
+    - .\build-scripts\build_windows.bat
+  artifacts:
+    paths:
+      - dist/MicroBridge/
+    expire_in: 1 week
+
 
 # Would add macOS test but I am not paying for that T_T
