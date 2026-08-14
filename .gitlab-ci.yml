@@ -54,7 +54,7 @@ typecheck:
   script:
     - python3 --version
     - pip install -e .
-    - pip install basedpyright
+    - pip install pytest basedpyright
     - basedpyright
 
 test-and-build-windows:
@@ -69,6 +69,22 @@ test-and-build-windows:
     - pip install pytest pyinstaller
     - pytest tests -v
     - .\Build-Scripts\build_windows.bat
+  artifacts:
+    paths:
+      - dist/MicroBridge/
+    expire_in: 1 week
+
+test-and-build-linux:
+  stage: build
+  image: python:3.12-slim
+  before_script:
+    - *banner
+  script:
+    - python3 --version
+    - pip install -e .
+    - pip install pyinstaller
+    - chmod +x ./Build-Scripts/build_linux.sh
+    - ./Build-Scripts/build_linux.sh
   artifacts:
     paths:
       - dist/MicroBridge/
