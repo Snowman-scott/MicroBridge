@@ -19,7 +19,7 @@ if [[ -n "${CI:-}" ]]; then
 else
     echo "[1/3] Running Unit Tests with Real Test Data..."
     export PYTHONPATH="$(pwd)/src${PYTHONPATH:+:$PYTHONPATH}"
-    "$PY" -m unittest discover -s tests -p "test_*.py" -v
+    "$PY" -m pytest tests -v
 
     echo "SUCCESS: All tests passed."
 

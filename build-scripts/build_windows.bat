@@ -18,7 +18,7 @@ REM --- Step 1: Automated Testing ---
 echo [1/4] Running Unit Tests with Real Test Data...
 REM Set PYTHONPATH so tests can find MicroBridge in the src folder
 set PYTHONPATH=%PYTHONPATH%;%CD%\src
-python -m unittest discover -s tests -p "test_*.py" -v
+python -m pytest tests -v
 
 if %errorlevel% neq 0 (
     echo.
