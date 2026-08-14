@@ -13,19 +13,25 @@ echo " MicroBridge: Unified Test & Build (macOS)"
 echo "============================================================"
 echo
 
-echo "[1/4] Running Unit Tests with Real Test Data..."
-export PYTHONPATH="$(pwd)/src${PYTHONPATH:+:$PYTHONPATH}"
-"$PY" -m unittest discover -s tests -p "test_*.py" -v
+if [[ -n "${CI:-}" ]]; then
+    echo "CI detected: skipping unit tests (they run in the test stage)."
+    echo
+else
+    echo "[1/3] Running Unit Tests with Real Test Data..."
+    export PYTHONPATH="$(pwd)/src${PYTHONPATH:+:$PYTHONPATH}"
+    "$PY" -m unittest discover -s tests -p "test_*.py" -v
 
-echo "SUCCESS: All tests passed."
+    echo "SUCCESS: All tests passed."
 
-echo
-echo "[2/4] Cleaning previous build artifacts..."
+    echo
+fi
+
+echo "[2/3] Cleaning previous build artifacts..."
 rm -rf build dist
 echo "Done."
 
 echo
-echo "[3/4] Building Unified MicroBridge Application..."
+echo "[3/3] Building Unified MicroBridge Application..."
 echo "(Supports both GUI and CLI modes)"
 echo
 
@@ -63,7 +69,7 @@ fi
     "src/MicroBridge/main.py"
 
 echo
-echo "[4/4] Creating CLI shim next to the app..."
+echo "Creating CLI shim next to the app..."
 cat > "dist/microbridge" <<'EOF'
 #!/usr/bin/env bash
 exec "$(dirname "$0")/MicroBridge.app/Contents/MacOS/MicroBridge" "$@"
