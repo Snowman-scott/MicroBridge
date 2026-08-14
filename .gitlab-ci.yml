@@ -1,8 +1,16 @@
+workflow:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+
 stages:
   - test
   - build
 
 .test_template:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_PIPELINE_SOURCE == "push"'
   script:
     - python3 --version
     - pip install -e .
@@ -44,6 +52,9 @@ typecheck:
 coverage:
   stage: test
   image: python:3.12-slim
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_PIPELINE_SOURCE == "push"'
   script:
     - python3 --version
     - pip install -e ".[dev]"
@@ -54,7 +65,6 @@ coverage:
       coverage_report:
         coverage_format: cobertura
         path: coverage.xml
-
 
 test-and-build-linux:
   stage: build
@@ -94,6 +104,5 @@ test-and-build-windows:
     paths:
       - dist/MicroBridge/
     expire_in: 1 week
-
 
 # Would add macOS test but I am not paying for that T_T
