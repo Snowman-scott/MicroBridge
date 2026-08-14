@@ -1,16 +1,24 @@
+:<<"::CMDLITERAL"
+@echo off
+goto :WINDOWS_MODE
+::CMDLITERAL
+echo [Mac/Linux Detected] Forwarding build script to Wine...
+wine cmd /c "%~nx0" 2>nul || wine cmd /c "$0"
+exit
+
+:WINDOWS_MODE
 @echo off
 SETLOCAL EnableDelayedExpansion
-
 echo ============================================================
-echo  MicroBridge: Unified Test & Build (v1.2.0)
+echo  MicroBridge: Unified Test ^& Build
 echo ============================================================
 echo.
 
 REM --- Step 1: Automated Testing ---
 echo [1/4] Running Unit Tests with Real Test Data...
-REM Set PYTHONPATH so tests can find MicroBridge.py in The_Source_Code folder
-set PYTHONPATH=%PYTHONPATH%;%CD%\The_Source_Code
-python -m unittest discover -s tests -p "test_*.py" -v
+REM Set PYTHONPATH so tests can find MicroBridge in the src folder
+set PYTHONPATH=%PYTHONPATH%;%CD%\src
+python -m pytest tests -v
 
 if %errorlevel% neq 0 (
     echo.
@@ -31,20 +39,23 @@ echo Done.
 REM --- Step 3: Single Unified Build ---
 echo.
 echo [3/4] Building Unified MicroBridge Executable...
-echo (Supports both GUI and --cli modes)
+echo (Supports both GUI and CLI modes)
+echo.
+echo NOTE: onedir avoids the Defender false positives that
+echo       onefile builds trigger. The .exe lives in a folder.
 echo.
 
 pyinstaller ^
     --name="MicroBridge" ^
     --onedir ^
     --windowed ^
-    --icon="The_Source_Code\MicroBridge_Icon.ico" ^
-    --version-file="The_Source_Code\version_info.txt" ^
-    --add-data="The_Source_Code\MicroBridge_Icon.ico;." ^
+    --icon="src\MicroBridge_Icon.ico" ^
+    --version-file="build-scripts\version_info.txt" ^
+    --add-data="src\MicroBridge_Icon.ico;." ^
     --distpath="dist" ^
     --workpath="build" ^
     --noconfirm ^
-    "The_Source_Code\MicroBridge.py"
+    "src\MicroBridge\main.py"
 
 if %errorlevel% neq 0 (
     echo.
@@ -53,6 +64,11 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
+REM --- Step 4: Ship CLI shim alongside the exe ---
+echo.
+echo [4/4] Copying CLI shim next to the exe...
+copy /y "build-scripts\microbridge.cmd" "dist\MicroBridge\microbridge.cmd" >nul
+
 echo.
 echo ============================================================
 echo  DONE: Build successful!
@@ -60,7 +76,8 @@ echo ============================================================
 echo Location: dist\MicroBridge\MicroBridge.exe
 echo.
 echo Usage:
-echo   - Double-click: Launches GUI
-echo   - Terminal: MicroBridge.exe --cli file.ndpa
+echo   - Double-click MicroBridge.exe: Launches GUI (no console flash)
+echo   - Terminal CLI: microbridge.cmd filename.ndpa
+echo     (use the .cmd so cmd.exe waits for the conversion to finish)
 echo ============================================================
-pause
+if not defined CI pause

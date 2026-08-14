@@ -50,6 +50,7 @@ Thumbs.db
 # Internal development files
 VERSION_0.1.1_SUMMARY.md
 Old_version_releses/
+The_Source_Code/
 
 # Installer output
 Installer_scripts/Output/
@@ -91,3 +92,6 @@ Desktop.ini
 # Release files (not for repo)
 RELEASE_README.txt
 GITHUB_RELEASE*.md
+
+# Temp stuff
+tmp

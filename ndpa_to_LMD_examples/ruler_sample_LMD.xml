@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ImageData>
+  <GlobalCoordinates>1</GlobalCoordinates>
+  <X_CalibrationPoint_1>100000</X_CalibrationPoint_1>
+  <Y_CalibrationPoint_1>200000</Y_CalibrationPoint_1>
+  <X_CalibrationPoint_2>150000</X_CalibrationPoint_2>
+  <Y_CalibrationPoint_2>250000</Y_CalibrationPoint_2>
+  <X_CalibrationPoint_3>200000</X_CalibrationPoint_3>
+  <Y_CalibrationPoint_3>300000</Y_CalibrationPoint_3>
+  <ShapeCount>2</ShapeCount>
+  <Shape_1>
+    <PointCount>3</PointCount>
+    <X_1>300000</X_1>
+    <Y_1>400000</Y_1>
+    <X_2>350000</X_2>
+    <Y_2>400000</Y_2>
+    <X_3>350000</X_3>
+    <Y_3>450000</Y_3>
+  </Shape_1>
+  <Shape_2>
+    <PointCount>2</PointCount>
+    <X_1>500000</X_1>
+    <Y_1>600000</Y_1>
+    <X_2>550000</X_2>
+    <Y_2>650000</Y_2>
+  </Shape_2>
+</ImageData>
