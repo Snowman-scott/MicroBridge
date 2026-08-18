@@ -1,0 +1,22 @@
+name: Typecheck
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    container: python:3.12-slim
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run basedpyright
+        run: |
+          python3 --version
+          pip install -e .
+          pip install pytest basedpyright
+          basedpyright
