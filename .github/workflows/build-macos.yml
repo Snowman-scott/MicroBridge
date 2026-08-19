@@ -1,0 +1,28 @@
+name: Build macOS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-macos:
+    name: Build macOS
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: |
+          python3 --version
+          pip install -e .
+          pip install pyinstaller
+          chmod +x ./build-scripts/build_macos.sh
+          ./build-scripts/build_macos.sh
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MicroBridge-macos
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7
