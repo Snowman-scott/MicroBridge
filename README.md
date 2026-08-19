@@ -5,7 +5,7 @@
  | |\/| | |/ __| '__/ _ \| ___ \ '__| |/ _` |/ _` |/ _ \
  | |  | | | (__| | | (_) | |_/ / |  | | (_| | (_| |  __/
  \_|  |_/_|\___|_|  \___/\____/|_|  |_|\__,_|\__, |\___|
-                                               __/ |
+                                              __/ |
                                               |___/
 ```
 
@@ -127,8 +127,6 @@ pipx install microbridge-lmd
 ---
 
 </details><details><summary><b>Install from source</b></summary>
-  
-To install from source,
 
 Make sure python 3.12 or above is installed.
 
