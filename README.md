@@ -52,6 +52,8 @@ Coming Soon!
 
 I will hopefully get it onto more systems soon like debian (apt), fedora (dnf) and more (hopefully)
 
+---
+
 </details><details><summary><b>MacOS</b></summary>
   
 There are 2 Main ways to Install MicroBridge on macOS
@@ -73,7 +75,11 @@ You can go to the [Releases page](https://github.com/Snowman-scott/MicroBridge/r
 
 **Note**: This won't allow you to type `microbridge` anywhere on your machine and run it CLI, The binary is only recommended if you plan on only using the GUI (User interface)  I recommend using the brew install above, pypi, or installing from source if you plan on using the CLI.
 
-</details></details><details><summary><b>Windows</b></summary>
+</details>
+
+---
+
+</details><details><summary><b>Windows</b></summary>
   
 As of Current there is only one main way of installing MicroBridge on Windows
 
@@ -87,7 +93,11 @@ You can go to the [Releases page](https://github.com/Snowman-scott/MicroBridge/r
   
 I may add these packages onto choco or scoop later on
 
-</details></details><details><summary><b>pip & pipx<b></summary>
+</details>
+
+---
+
+</details><details><summary><b>pip & pipx<b></summary>
   
 Using pip is not recommended on Linux unless you want to use a virtual environment,  I recommend linux and MacOS users to look in the Linux and macOS areas of this README for more appropriate installation.
 
@@ -112,7 +122,11 @@ Then run:
 pipx install microbridge-lmd
 ```
 
-</details></details><details><summary><b>Install from source</b></summary>
+</details>
+
+---
+
+</details><details><summary><b>Install from source</b></summary>
   
 To install from source,
 
