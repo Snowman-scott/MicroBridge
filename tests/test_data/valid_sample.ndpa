@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<annotations>
+  <!-- Calibration Point 1 - Circle annotation -->
+  <ndpviewstate id="1">
+    <title>Calibration_1</title>
+    <annotation type="circle">
+      <x>100000000</x>
+      <y>200000000</y>
+      <radius>5000000</radius>
+    </annotation>
+  </ndpviewstate>
+
+  <!-- Calibration Point 2 - Circle annotation -->
+  <ndpviewstate id="2">
+    <title>Calibration_2</title>
+    <annotation type="circle">
+      <x>150000000</x>
+      <y>250000000</y>
+      <radius>5000000</radius>
+    </annotation>
+  </ndpviewstate>
+
+  <!-- Calibration Point 3 - Circle annotation -->
+  <ndpviewstate id="3">
+    <title>Calibration_3</title>
+    <annotation type="circle">
+      <x>200000000</x>
+      <y>300000000</y>
+      <radius>5000000</radius>
+    </annotation>
+  </ndpviewstate>
+
+  <!-- Capture Shape 1 - Freehand polygon -->
+  <ndpviewstate id="4">
+    <title>ROI_1</title>
+    <annotation type="freehand">
+      <pointlist>
+        <point>
+          <x>300000000</x>
+          <y>400000000</y>
+        </point>
+        <point>
+          <x>350000000</x>
+          <y>400000000</y>
+        </point>
+        <point>
+          <x>350000000</x>
+          <y>450000000</y>
+        </point>
+        <point>
+          <x>300000000</x>
+          <y>450000000</y>
+        </point>
+      </pointlist>
+    </annotation>
+  </ndpviewstate>
+
+  <!-- Capture Shape 2 - Freehand polygon -->
+  <ndpviewstate id="5">
+    <title>ROI_2</title>
+    <annotation type="freehand">
+      <pointlist>
+        <point>
+          <x>500000000</x>
+          <y>600000000</y>
+        </point>
+        <point>
+          <x>550000000</x>
+          <y>600000000</y>
+        </point>
+        <point>
+          <x>525000000</x>
+          <y>650000000</y>
+        </point>
+      </pointlist>
+    </annotation>
+  </ndpviewstate>
+</annotations>

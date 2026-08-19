@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<annotations>
+  <!-- Calibration Point 1 -->
+  <ndpviewstate id="1">
+    <title>Cal_1</title>
+    <annotation type="circle">
+      <x>100000000</x>
+      <y>200000000</y>
+      <radius>5000000</radius>
+    </annotation>
+  </ndpviewstate>
+
+  <!-- Calibration Point 2 -->
+  <ndpviewstate id="2">
+    <title>Cal_2</title>
+    <annotation type="circle">
+      <x>150000000</x>
+      <y>250000000</y>
+      <radius>5000000</radius>
+    </annotation>
+  </ndpviewstate>
+
+  <!-- Calibration Point 3 -->
+  <ndpviewstate id="3">
+    <title>Cal_3</title>
+    <annotation type="circle">
+      <x>200000000</x>
+      <y>300000000</y>
+      <radius>5000000</radius>
+    </annotation>
+  </ndpviewstate>
+
+  <!-- Ruler 1 - should be SKIPPED -->
+  <ndpviewstate id="4">
+    <title>Ruler_1</title>
+    <annotation type="linearmeasure" displayname="AnnotateRuler" color="#ff0000">
+      <x1>100000000</x1>
+      <y1>100000000</y1>
+      <x2>200000000</x2>
+      <y2>200000000</y2>
+    </annotation>
+  </ndpviewstate>
+
+  <!-- Capture Shape 1 -->
+  <ndpviewstate id="5">
+    <title>ROI_1</title>
+    <annotation type="freehand">
+      <pointlist>
+        <point>
+          <x>300000000</x>
+          <y>400000000</y>
+        </point>
+        <point>
+          <x>350000000</x>
+          <y>450000000</y>
+        </point>
+      </pointlist>
+    </annotation>
+  </ndpviewstate>
+
+  <!-- Ruler 2 - should be SKIPPED -->
+  <ndpviewstate id="6">
+    <title>Ruler_2</title>
+    <annotation type="linearmeasure" displayname="AnnotateRuler" color="#ff0000">
+      <x1>400000000</x1>
+      <y1>400000000</y1>
+      <x2>500000000</x2>
+      <y2>500000000</y2>
+    </annotation>
+  </ndpviewstate>
+
+  <!-- Capture Shape 2 -->
+  <ndpviewstate id="7">
+    <title>ROI_2</title>
+    <annotation type="freehand">
+      <pointlist>
+        <point>
+          <x>600000000</x>
+          <y>700000000</y>
+        </point>
+        <point>
+          <x>650000000</x>
+          <y>750000000</y>
+        </point>
+      </pointlist>
+    </annotation>
+  </ndpviewstate>
+</annotations>
