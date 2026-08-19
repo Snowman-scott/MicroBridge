@@ -48,6 +48,7 @@ Thumbs.db
 *.sublime-project
 
 # Internal development files
+README-Internal.md
 VERSION_0.1.1_SUMMARY.md
 Old_version_releses/
 The_Source_Code/

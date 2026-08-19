@@ -23,19 +23,131 @@ MicroBridge takes the annotation files from NDP.view2 and converts them into a f
 
 # Installation
 To install the package do one of the following:
+<details><summary><b>Linux</b></summary>
 
-A. Grab the release from the release section
-(Mainly for windows)
+There is a universal way of installing MicroBridge on Linux
 
-B. Clone the Repo
-Make a virtual environment
+<details><summary>pipx</summary>
+
+Make sure you have python installed, 
+If you do not install python3.12 or above using your systems package manager.
+
+Then install pipx.
+Then run:
 ```zsh
-python3 -m venv .venv
+pipx install microbridge-lmd
 ```
-Then:
+
+If that does not work you can always overide it and run:
+```zsh
+pip install microbridge --break-system-packages
+```
+This will install it with normal pip but can cause issues with your system python.
+
+</details><details><summary>AUR</summary>
+
+Coming Soon!
+
+</details>
+
+I will hopefully get it onto more systems soon like debian (apt), fedora (dnf) and more (hopefully)
+
+</details><details><summary><b>MacOS</b></summary>
+
+There are 2 Main ways to Install MicroBridge on macOS
+
+<details><summary>Homebrew(Brew)</summary>
+
+Install [HomeBrew](https://docs.brew.sh/Installation) if not installed.
+
+Run this in terminal:
+```zsh
+brew tap Snowman-scott/microbridge https://github.com/Snowman-scott/MicroBridge
+brew trust Snowman-scott/microbridge
+brew install microbridge-lmd
+```
+
+</details><details><summary>Binary Download</summary>
+
+You can go to the [Releases page](https://github.com/Snowman-scott/MicroBridge/releases) and download the MB_MacOS_zip. (M Series processors Only!)  
+
+**Note**: This won't allow you to type `microbridge` anywhere on your machine and run it CLI, The binary is only recommended if you plan on only using the GUI (User interface)  I recommend using the brew install above, pypi, or installing from source if you plan on using the CLI.
+
+</details></details><details><summary><b>Windows</b></summary>
+
+As of Current there is only one main way of installing MicroBridge on Windows
+
+<details><summary>Binary Download</summary>
+
+You can go to the [Releases page](https://github.com/Snowman-scott/MicroBridge/releases) and download the MB_Windows_zip. (x86_64)  
+
+**Note**: This won't allow you to type `microbridge` anywhere on your machine and run it CLI, The binary is only recommended if you plan on only using the GUI (User interface)  I recommend using pypi, or installing from source if you plan on using the CLI.
+
+</details><details><summary>Choco or Scoop</summary>
+
+I may add these packages onto choco or scoop later on
+
+</details></details><details><summary><b>pip & pipx<b></summary>
+
+Using pip is not recommended on Linux unless you want to use a virtual environment,  I recommend linux and MacOS users to look in the Linux and macOS areas of this README for more appropriate installation.
+
+<details><summary>pip</summary>
+
+To install with pip make sure you have python installed  
+Then run:
+```zsh
+pip install microbridge --break-system-packages
+```
+
+**Note:** I do not recommend Doing this on MacOS or Linux as it can break your system python
+
+</details><details><summary>pipx</summary>
+
+To install with pipx make sure you have python installed, 
+If you do not have python installed then install python3.12 or above.
+Then install pipx.
+
+Then run:
+```zsh
+pipx install microbridge-lmd
+```
+
+</details></details><details><summary><b>Install from source</b></summary>
+
+To install from source,
+
+Make sure python 3.12 or above is installed.
+
+You will also want git.
+
+First Clone the Repo:
+```zsh
+git clone https://github.com/Snowman-scott/MicroBridge.git
+```
+
+Then move into the cloned dir:
+```zsh
+cd MicroBridge
+```
+
+Then Setup a venv:
+```zsh
+python3 -m .venv venv
+```
+
+Activate the vnev:
+```zsh
+source .venv/bin/activate
+```
+
+Then just install microbridge:
 ```zsh
 pip install -e .
 ```
+
+**Note:** This sets up MicroBridge in a virtual environment(venv), this means the code will only be able to be ran when you have that specific venv active.  I recommend Installing via pip or pipx if you plan to use this day to day, From source is preferred for development
+
+</details></details>
 
 ---
 
