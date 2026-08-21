@@ -46,7 +46,21 @@ This will install it with normal pip but can cause issues with your system pytho
 
 </details><details><summary>AUR</summary>
   
-Coming Soon!
+You can find the package on the AUR 
+
+Use an aur helper like paru by running:
+```zsh
+paru -S microbridge-lmd
+```
+Or Yay:
+```zsh
+yay -S microbridge-lmd
+```
+
+Or manually by cloning the package then running:
+```zsh
+paru -Ui
+```
 
 </details>
 
