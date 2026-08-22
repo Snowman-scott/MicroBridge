@@ -22,6 +22,9 @@ MicroBridge takes the annotation files from NDP.view2 and converts them into a f
 ---
 
 # Installation
+
+[![Packaging status](https://repology.org/badge/vertical-allrepos/microbridge-lmd.svg)](https://repology.org/project/microbridge-lmd/versions)
+
 To install select your Operating system and follow one of the sets of instructions:
 <details><summary><b>Linux</b></summary>
   
