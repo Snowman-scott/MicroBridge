@@ -3,8 +3,8 @@ class MicrobridgeLmd < Formula
 
   desc "NDP/CSV to LMD Converter"
   homepage "https://github.com/Snowman-scott/MicroBridge"
-  url "https://files.pythonhosted.org/packages/79/4a/b10abe90eb0cb3f0818b75cf0391ba0b64bcebab40be5999683839d95c87/microbridge_lmd-0.2.2.tar.gz"
-  sha256 "455bfee331cc11e8f4dadcad7cd9ab349e48d5854e3ad4294307ad41fef2acb8"
+  url "https://files.pythonhosted.org/packages/b9/19/6cd6f6b601516e98bf994ec44a3ced5fc63dbe6dd63cee60a8f234d0f383/microbridge_lmd-0.2.3.tar.gz"
+  sha256 "c4db939c965b7defbcdba41c4d71efaf8fcfaea0293a7180d95013f97fca75fa"
   license "GPL-3.0-or-later"
 
   depends_on "python-tk@3.14"
