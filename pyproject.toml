@@ -1,6 +1,6 @@
 [project]
 name = "microbridge-lmd"
-version = "0.2.2"
+version = "0.2.3"
 description = "NDP/CSV to LMD Converter"
 readme = "README.md"
 license = "GPL-3.0-or-later"
