@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from MicroBridge.datapass.datapass import Annot, AnnotFile, Metadata, Point
+from MicroBridge.file_read.datapass import Annot, AnnotFile, Metadata, Point
 
 
 p = Point(x=12, y=16)
