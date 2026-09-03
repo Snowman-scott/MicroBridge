@@ -1,6 +1,6 @@
 [project]
 name = "microbridge-lmd"
-version = "0.2.1"
+version = "0.2.2"
 description = "NDP/CSV to LMD Converter"
 readme = "README.md"
 license = "GPL-3.0-or-later"
@@ -35,6 +35,9 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+"MicroBridge.resources" = ["*.ico"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

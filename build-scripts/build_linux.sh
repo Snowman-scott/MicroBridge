@@ -39,7 +39,7 @@ echo
     --name="MicroBridge" \
     --onedir \
     --windowed \
-    --add-data="src/MicroBridge_Icon.ico:." \
+    --add-data="src/MicroBridge/resources/MicroBridge_Icon.ico:." \
     --distpath="dist" \
     --workpath="build" \
     --noconfirm \

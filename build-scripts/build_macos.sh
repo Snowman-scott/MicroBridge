@@ -36,19 +36,22 @@ echo "(Supports both GUI and CLI modes)"
 echo
 
 ICON_ARGS=()
-ICNS="src/MicroBridge_Icon.icns"
-ICO="src/MicroBridge_Icon.ico"
+ICNS="src/MicroBridge/resources/MicroBridge_Icon.icns"
+ICO="src/MicroBridge/resources/MicroBridge_Icon.ico"
 if [[ ! -f "$ICNS" ]] && command -v sips >/dev/null 2>&1 && command -v iconutil >/dev/null 2>&1; then
     echo "Converting $ICO to $ICNS..."
     workdir="$(mktemp -d)"
     iconset="$workdir/icon.iconset"
     mkdir -p "$iconset"
-    for s in 16 32 64 128 256 512 1024; do
-        sips -z "$s" "$s" "$ICO" --out "$iconset/icon_${s}x${s}.png" >/dev/null
-        half=$((s / 2))
-        if [[ "$s" -gt 1 ]]; then
-            cp "$iconset/icon_${s}x${s}.png" "$iconset/icon_${half}x${half}@2x.png"
-        fi
+    # Only these slot names are valid to iconutil, and -s format png is
+    # required or sips emits .ico data under a .png name. Source art is
+    # 256x256, so 512@2x is omitted rather than upscaled.
+    for pair in "16x16:16" "16x16@2x:32" "32x32:32" "32x32@2x:64" \
+                "128x128:128" "128x128@2x:256" "256x256:256"; do
+        name="${pair%%:*}"
+        px="${pair##*:}"
+        sips -s format png -z "$px" "$px" "$ICO" \
+            --out "$iconset/icon_${name}.png" >/dev/null
     done
     iconutil -c icns "$iconset" -o "$ICNS"
     rm -rf "$workdir"
@@ -62,7 +65,7 @@ fi
     --onedir \
     --windowed \
     "${ICON_ARGS[@]}" \
-    --add-data="src/MicroBridge_Icon.ico:." \
+    --add-data="src/MicroBridge/resources/MicroBridge_Icon.ico:." \
     --distpath="dist" \
     --workpath="build" \
     --noconfirm \

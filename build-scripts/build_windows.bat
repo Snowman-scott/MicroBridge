@@ -49,9 +49,9 @@ pyinstaller ^
     --name="MicroBridge" ^
     --onedir ^
     --windowed ^
-    --icon="src\MicroBridge_Icon.ico" ^
+    --icon="src\MicroBridge\resources\MicroBridge_Icon.ico" ^
     --version-file="build-scripts\version_info.txt" ^
-    --add-data="src\MicroBridge_Icon.ico;." ^
+    --add-data="src\MicroBridge\resources\MicroBridge_Icon.ico;." ^
     --distpath="dist" ^
     --workpath="build" ^
     --noconfirm ^
