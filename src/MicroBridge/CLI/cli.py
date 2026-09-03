@@ -6,6 +6,7 @@ from pathlib import Path
 from xml.parsers.expat import ExpatError
 
 from MicroBridge.Core.core import convert_ndpa_to_lmd_core, derive_output_filename
+from MicroBridge.launcher import install_launcher as _install_launcher
 
 BANNER = r"""
   ___  ____               ______      _     _
@@ -50,9 +51,22 @@ def find_ndpa_files(directory):
 @click.pass_context
 @click.option('-b', '--batch',type=click.Path(), nargs=1, required=False, help="Process a Directory of '.ndpa' files in one go.")
 @click.option('-o', '--output',type=click.Path(), nargs=1, required=False, help="Select an output directory for the converted '.ndpa' files to end up in.")
+@click.option('--install-launcher', is_flag=True, default=False,
+              help="Add MicroBridge to your applications menu (no admin needed).")
 @click.argument("files", nargs=-1, required=False)
-def run(ctx, files, batch, output):
+def run(ctx, files, batch, output, install_launcher):
     click.echo(BANNER)
+    if install_launcher:
+        try:
+            created = _install_launcher()
+        except NotImplementedError as e:
+            click.secho(str(e), fg="red", err=True)
+            sys.exit(1)
+        except OSError as e:
+            click.secho(f"Could not install the launcher: {e}", fg="red", err=True)
+            sys.exit(1)
+        click.secho(f"Launcher installed at {created}", fg="green")
+        sys.exit(0)
     if not files and not batch:
         click.echo(ctx.get_help())
         sys.exit(1)
