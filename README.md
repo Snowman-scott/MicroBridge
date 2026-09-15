@@ -87,6 +87,13 @@ brew trust Snowman-scott/microbridge
 brew install microbridge-lmd
 ```
 
+After Install Run:
+```zsh
+microbridge --install-launcher
+```
+
+This will make an entry in your applications menu (the spotlight search)
+
 </details><details><summary>Binary Download</summary>
   
 You can go to the [Releases page](https://github.com/Snowman-scott/MicroBridge/releases) and download the MB_MacOS_zip. (M Series processors Only!)  

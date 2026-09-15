@@ -90,12 +90,8 @@ class MicrobridgeLmd < Formula
     return unless OS.mac?
 
     <<~EOS
-      To add MicroBridge to Launchpad and Spotlight (no admin or sudo needed):
-        microbridge --install-launcher
-
-      That copies a launcher into ~/Applications. Homebrew cannot do it during
-      install: brew overrides HOME and sandboxes post_install, so a formula
-      gets EPERM anywhere near the real home.
+      please run 'microbridge --install-launcher' to setup a .APP bundle
+      for launching the GUI from the application menu.
     EOS
   end
 
