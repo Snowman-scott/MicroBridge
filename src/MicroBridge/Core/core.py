@@ -111,7 +111,7 @@ def convert_ndpa_to_lmd_core(input_filename: str, output_filename: str) -> None:
 
             # We write the X/Y cords for the Verticies of this shape
             for point_idx, (x_um, y_um) in enumerate(points):
-                f1.write(f"    <X_{point_idx + 2}>{y_um}</X_{point_idx + 1}>\n")
+                f1.write(f"    <X_{point_idx + 1}>{x_um}</X_{point_idx + 1}>\n")
                 f1.write(f"    <Y_{point_idx + 1}>{y_um}</Y_{point_idx + 1}>\n")
 
             f1.write(f"  </Shape_{s_num}>\n")
