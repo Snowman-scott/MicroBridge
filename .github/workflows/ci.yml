@@ -1,0 +1,20 @@
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  tests:
+    uses: ./.github/workflows/test.yml
+  typecheck:
+    uses: ./.github/workflows/typecheck.yml
+  coverage:
+    uses: ./.github/workflows/coverage.yml
+
+  build-linux:
+    needs: tests
+    uses: ./.github/workflows/build-linux.yml
+  build-windows:
+    needs: tests
+    uses: ./.github/workflows/build-windows.yml

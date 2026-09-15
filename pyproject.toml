@@ -1,0 +1,44 @@
+[project]
+name = "microbridge-lmd"
+version = "2.0.0"
+description = "NDP/CSV to LMD Converter"
+readme = "README.md"
+license = "GPL-3.0-or-later"
+authors = [{name = "Rose Scott"}]
+requires-python = ">=3.11"
+dependencies = [
+    "click",
+    "customtkinter"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Science/Research",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "basedpyright"
+]
+
+[project.scripts]
+microbridge = "MicroBridge.main:main"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"MicroBridge.resources" = ["*.ico"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

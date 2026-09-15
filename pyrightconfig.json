@@ -1,0 +1,10 @@
+{
+  "failOnWarnings": false,
+  "reportImplicitStringConcatenation": false,
+  "reportUnusedCallResult": false,
+  "reportExplicitAny": false,
+  "reportMissingTypeStubs": false,
+  "allowedUntypedLibraries": [
+    "customtkinter"
+  ]
+}

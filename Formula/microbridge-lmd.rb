@@ -3,8 +3,8 @@ class MicrobridgeLmd < Formula
 
   desc "NDP/CSV to LMD Converter"
   homepage "https://github.com/Snowman-scott/MicroBridge"
-  url "https://files.pythonhosted.org/packages/b9/19/6cd6f6b601516e98bf994ec44a3ced5fc63dbe6dd63cee60a8f234d0f383/microbridge_lmd-0.2.3.tar.gz"
-  sha256 "c4db939c965b7defbcdba41c4d71efaf8fcfaea0293a7180d95013f97fca75fa"
+  url "https://files.pythonhosted.org/packages/e6/7c/61f2f0c0cbbb9bbb6a4556de729075005c487355e9fe77423b9de993618c/microbridge_lmd-2.0.0.tar.gz"
+  sha256 "eb30b5272036259f1204963f0193c1bc6b4917c585732b5b409345834c745948"
   license "GPL-3.0-or-later"
 
   depends_on "python-tk@3.14"
@@ -90,10 +90,8 @@ class MicrobridgeLmd < Formula
     return unless OS.mac?
 
     <<~EOS
-      A MicroBridge.app launcher was installed. Homebrew formulae cannot write
-      to /Applications, so link it yourself to get it into Finder, Launchpad
-      and Spotlight:
-        ln -sfn #{opt_prefix}/MicroBridge.app /Applications/MicroBridge.app
+      To add MicroBridge to Launchpad and Spotlight (no admin or sudo needed):
+        microbridge --install-launcher
     EOS
   end
 

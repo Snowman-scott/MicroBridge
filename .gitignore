@@ -9,6 +9,7 @@ build/
 
 # Python
 The_Source_Code/__pycache__/
+The_Source_Code/MC_temp.py
 __pycache__/
 *.py[cod]
 *$py.class
@@ -32,6 +33,7 @@ examples/
 example_annotations/
 
 # IDE and editor files
+Mission_Notes.md
 .vscode/
 .idea/
 *.swp
@@ -46,7 +48,10 @@ Thumbs.db
 *.sublime-project
 
 # Internal development files
+README-Internal.md
 VERSION_0.1.1_SUMMARY.md
+Old_version_releses/
+The_Source_Code/
 
 # Installer output
 Installer_scripts/Output/
@@ -88,3 +93,7 @@ Desktop.ini
 # Release files (not for repo)
 RELEASE_README.txt
 GITHUB_RELEASE*.md
+
+# Temp stuff
+tmp
+Mb_v3.0-plan.md

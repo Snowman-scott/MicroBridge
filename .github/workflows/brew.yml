@@ -1,0 +1,46 @@
+name: Homebrew Formula
+
+on:
+  pull_request:
+    paths:
+      - "Formula/**"
+      - ".github/workflows/brew.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "Formula/**"
+  workflow_dispatch:
+
+jobs:
+  formula:
+    name: Formula install + GUI import (macOS)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lint formula
+        run: brew style Formula/microbridge-lmd.rb
+
+      # Homebrew rejects installing a formula by file path; it must live in a
+      # tap. A throwaway local tap tests this branch's formula rather than
+      # whatever is already published on main.
+      - name: Stage formula in a local tap
+        run: |
+          brew tap-new local/citest --no-git
+          cp Formula/microbridge-lmd.rb "$(brew --repository local/citest)/Formula/"
+
+      - name: Install from formula
+        run: brew install --build-from-source local/citest/microbridge-lmd
+
+      # Runs --help plus the GUI import, which is what a python-tk version
+      # mismatch breaks.
+      - name: Run formula test block
+        run: brew test local/citest/microbridge-lmd
+
+      - name: Verify app bundle
+        run: |
+          app="$(brew --prefix)/opt/microbridge-lmd/MicroBridge.app"
+          plutil -lint "$app/Contents/Info.plist"
+          test -x "$app/Contents/MacOS/MicroBridge"
+          test -f "$app/Contents/Resources/MicroBridge.icns"
