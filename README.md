@@ -329,6 +329,26 @@ If you have an issue please make an issue here on github
 [Open an issue](https://github.com/Snowman-scott/MicroBridge/issues)  
 or [Email me](mailto:rose@killallchickens.org)
 
+---
+
 # License
 This project is licensed under the [GNU GPLv3.0 License](LICENSE)   
-This is important as it support copyleft! and Free software!
+This is important as it support copyleft! and Free software!  
+(Which means a LOT to me)
+
+---
+
+# About the project
+
+<details><summary><b>About the project</b></summary>
+
+The project started off as a simple little file to file converter to seep up scientists workflows, 
+Microbridge is now being taken from a grungy little bedroom and being standerdised, made production ready and being improved upon 'with a little help from my friends' over at the sanger Institute.
+With their help I am being taken from a Junior software dev and being taught how senior devs work, I thank them profusely for taking me on and helping me learn all these new awesome skills.
+
+MicroBridge will soon (hopefully) be able to convert between Qupath, NDP.View2, and Xenium. 
+This is a big step from what the tool once was, and I look forward to seeing how it turns out 
+
+Signed Rs - lead dev
+
+</details>
