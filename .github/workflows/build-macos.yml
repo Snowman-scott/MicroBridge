@@ -25,8 +25,26 @@ jobs:
           python3 -m pip install --upgrade pip
           python3 -m pip install -e .
           python3 -m pip install pyinstaller
-          chmod +x ./build-scripts/build_macos.sh
-          ./build-scripts/build_macos.sh
+
+          rm -rf build dist
+          python3 -m PyInstaller \
+            --name="MicroBridge" \
+            --onedir \
+            --windowed \
+            --add-data="src/MicroBridge/resources/MicroBridge_Icon.ico:." \
+            --distpath="dist" \
+            --workpath="build" \
+            --noconfirm \
+            "src/MicroBridge/main.py"
+
+          mkdir -p dist/bin
+          cat > dist/bin/microbridge <<'EOF'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          APP_DIR="$(cd "$(dirname "$0")/.." && pwd)/MicroBridge.app"
+          exec "$APP_DIR/Contents/MacOS/MicroBridge" "$@"
+          EOF
+          chmod +x dist/bin/microbridge
       - name: Package app bundle
         run: |
           # ditto, not zip: preserves the bundle's symlinks and resource forks.
