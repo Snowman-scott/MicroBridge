@@ -90,8 +90,8 @@ class MicrobridgeLmd < Formula
     return unless OS.mac?
 
     <<~EOS
-      please run 'microbridge --install-launcher' to setup a .APP bundle
-      for launching the GUI from the application menu.
+      To add MicroBridge to Launchpad and Spotlight (no admin or sudo needed):
+        microbridge --install-launcher
     EOS
   end
 
