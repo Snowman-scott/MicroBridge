@@ -324,6 +324,11 @@ run_tests.py
 
 ---
 
+# Issues
+If you have an issue please make an issue here on github  
+[Open an issue](https://github.com/Snowman-scott/MicroBridge/issues)  
+or [Email me](mailto:rose@killallchickens.org)
+
 # License
 This project is licensed under the [GNU GPLv3.0 License](LICENSE)   
 This is important as it support copyleft! and Free software!
