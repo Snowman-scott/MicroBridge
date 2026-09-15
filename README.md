@@ -95,12 +95,14 @@ microbridge --install-launcher
 This will make an entry in your applications menu (the spotlight search)
 
 </details><details><summary>Binary Download</summary>
+
+This method is broken due to macOS gatekeeper. Please use the Brew method as it works for both GUI and CLI. Thank you so much
   
-You can go to the [Releases page](https://github.com/Snowman-scott/MicroBridge/releases) and download the MB_MacOS_zip. (M Series processors Only!)  
+~~You can go to the [Releases page](https://github.com/Snowman-scott/MicroBridge/releases) and download the MB_MacOS_zip. (M Series processors Only!)~~ 
 
-**Note**: This won't allow you to type `microbridge` anywhere on your machine and run it CLI, The binary is only recommended if you plan on only using the GUI (User interface)  I recommend using the brew install above, pypi, or installing from source if you plan on using the CLI.
+~~**Note**: This won't allow you to type `microbridge` anywhere on your machine and run it CLI, ~~The binary is only recommended if you plan on only using the GUI (User interface)~~  I recommend using the brew install above, pypi, or installing from source if you plan on using the CLI.~~
 
-I do strongly recommend using Brew as it does a WAY better job than I did and the binary is not fully tested, the brew tap is.
+~~I do strongly recommend using Brew as it does a WAY better job than I did and the binary is not fully tested, the brew tap is.~~
 
 </details>
 
