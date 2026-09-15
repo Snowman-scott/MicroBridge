@@ -100,6 +100,8 @@ You can go to the [Releases page](https://github.com/Snowman-scott/MicroBridge/r
 
 **Note**: This won't allow you to type `microbridge` anywhere on your machine and run it CLI, The binary is only recommended if you plan on only using the GUI (User interface)  I recommend using the brew install above, pypi, or installing from source if you plan on using the CLI.
 
+I do strongly recommend using Brew as it does a WAY better job than I did and the binary is not fully tested, the brew tap is.
+
 </details>
 
 ---
