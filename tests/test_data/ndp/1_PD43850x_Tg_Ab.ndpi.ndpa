@@ -1,60 +1,6 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <annotations>
 	<ndpviewstate id="1">
-		<title>Reference_Point_1</title>
-		<details/>
-		<coordformat>nanometers</coordformat>
-		<lens>80.000000</lens>
-		<x>5456791</x>
-		<y>-5304333</y>
-		<z>0</z>
-		<showtitle>1</showtitle>
-		<showhistogram>0</showhistogram>
-		<showlineprofile>0</showlineprofile>
-		<annotation type="circle" displayname="AnnotateCircle" color="#ff0000">
-			<x>5460350</x>
-			<y>-5312389</y>
-			<radius>155</radius>
-			<measuretype>2</measuretype>
-		</annotation>
-	</ndpviewstate>
-	<ndpviewstate id="2">
-		<title>Reference_Point_2</title>
-		<details/>
-		<coordformat>nanometers</coordformat>
-		<lens>80.000000</lens>
-		<x>10570240</x>
-		<y>-3256745</y>
-		<z>0</z>
-		<showtitle>1</showtitle>
-		<showhistogram>0</showhistogram>
-		<showlineprofile>0</showlineprofile>
-		<annotation type="circle" displayname="AnnotateCircle" color="#ff0000">
-			<x>10605213</x>
-			<y>-3242505</y>
-			<radius>155</radius>
-			<measuretype>2</measuretype>
-		</annotation>
-	</ndpviewstate>
-	<ndpviewstate id="3">
-		<title>Reference_point_3</title>
-		<details/>
-		<coordformat>nanometers</coordformat>
-		<lens>80.000000</lens>
-		<x>7193530</x>
-		<y>6546625</y>
-		<z>0</z>
-		<showtitle>1</showtitle>
-		<showhistogram>0</showhistogram>
-		<showlineprofile>0</showlineprofile>
-		<annotation type="circle" displayname="AnnotateCircle" color="#ff0000">
-			<x>7220998</x>
-			<y>6566021</y>
-			<radius>156</radius>
-			<measuretype>2</measuretype>
-		</annotation>
-	</ndpviewstate>
-	<ndpviewstate id="4">
 		<title>1</title>
 		<details/>
 		<coordformat>nanometers</coordformat>
@@ -572,7 +518,7 @@
 			</pointlist>
 		</annotation>
 	</ndpviewstate>
-	<ndpviewstate id="5">
+	<ndpviewstate id="2">
 		<title>2</title>
 		<details/>
 		<coordformat>nanometers</coordformat>
@@ -1498,7 +1444,7 @@
 			</pointlist>
 		</annotation>
 	</ndpviewstate>
-	<ndpviewstate id="6">
+	<ndpviewstate id="3">
 		<title>3_ruler</title>
 		<details/>
 		<coordformat>nanometers</coordformat>
@@ -1516,7 +1462,7 @@
 			<y2>3796178</y2>
 		</annotation>
 	</ndpviewstate>
-	<ndpviewstate id="7">
+	<ndpviewstate id="4">
 		<title>3a</title>
 		<details/>
 		<coordformat>nanometers</coordformat>
@@ -2442,7 +2388,7 @@
 			</pointlist>
 		</annotation>
 	</ndpviewstate>
-	<ndpviewstate id="8">
+	<ndpviewstate id="5">
 		<title>4</title>
 		<details/>
 		<coordformat>nanometers</coordformat>
@@ -3512,7 +3458,7 @@
 			</pointlist>
 		</annotation>
 	</ndpviewstate>
-	<ndpviewstate id="9">
+	<ndpviewstate id="6">
 		<title>5_ruler</title>
 		<details/>
 		<coordformat>nanometers</coordformat>
@@ -3530,7 +3476,7 @@
 			<y2>5103756</y2>
 		</annotation>
 	</ndpviewstate>
-	<ndpviewstate id="10">
+	<ndpviewstate id="7">
 		<title>5a</title>
 		<details/>
 		<coordformat>nanometers</coordformat>
@@ -4492,7 +4438,7 @@
 			</pointlist>
 		</annotation>
 	</ndpviewstate>
-	<ndpviewstate id="11">
+	<ndpviewstate id="8">
 		<title>6</title>
 		<details/>
 		<coordformat>nanometers</coordformat>
@@ -5982,7 +5928,7 @@
 			</pointlist>
 		</annotation>
 	</ndpviewstate>
-	<ndpviewstate id="12">
+	<ndpviewstate id="9">
 		<title>7_ruler</title>
 		<details/>
 		<coordformat>nanometers</coordformat>
@@ -6000,7 +5946,7 @@
 			<y2>1291937</y2>
 		</annotation>
 	</ndpviewstate>
-	<ndpviewstate id="13">
+	<ndpviewstate id="10">
 		<title>7a</title>
 		<details/>
 		<coordformat>nanometers</coordformat>
@@ -6740,6 +6686,60 @@
 					<y>832824</y>
 				</point>
 			</pointlist>
+		</annotation>
+	</ndpviewstate>
+	<ndpviewstate id="11">
+		<title>ref_1</title>
+		<details/>
+		<coordformat>nanometers</coordformat>
+		<lens>80.000000</lens>
+		<x>5456791</x>
+		<y>-5304333</y>
+		<z>0</z>
+		<showtitle>1</showtitle>
+		<showhistogram>0</showhistogram>
+		<showlineprofile>0</showlineprofile>
+		<annotation type="circle" displayname="AnnotateCircle" color="#ff0000">
+			<x>5460350</x>
+			<y>-5312389</y>
+			<radius>155</radius>
+			<measuretype>2</measuretype>
+		</annotation>
+	</ndpviewstate>
+	<ndpviewstate id="12">
+		<title>ref_2</title>
+		<details/>
+		<coordformat>nanometers</coordformat>
+		<lens>80.000000</lens>
+		<x>10570240</x>
+		<y>-3256745</y>
+		<z>0</z>
+		<showtitle>1</showtitle>
+		<showhistogram>0</showhistogram>
+		<showlineprofile>0</showlineprofile>
+		<annotation type="circle" displayname="AnnotateCircle" color="#ff0000">
+			<x>10605213</x>
+			<y>-3242505</y>
+			<radius>155</radius>
+			<measuretype>2</measuretype>
+		</annotation>
+	</ndpviewstate>
+	<ndpviewstate id="13">
+		<title>ref_3</title>
+		<details/>
+		<coordformat>nanometers</coordformat>
+		<lens>80.000000</lens>
+		<x>7193530</x>
+		<y>6546625</y>
+		<z>0</z>
+		<showtitle>1</showtitle>
+		<showhistogram>0</showhistogram>
+		<showlineprofile>0</showlineprofile>
+		<annotation type="circle" displayname="AnnotateCircle" color="#ff0000">
+			<x>7220998</x>
+			<y>6566021</y>
+			<radius>156</radius>
+			<measuretype>2</measuretype>
 		</annotation>
 	</ndpviewstate>
 </annotations>

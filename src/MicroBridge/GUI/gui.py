@@ -256,7 +256,9 @@ class App(ctk.CTk):
                 output = str(Path(out_dir) / Path(output).name)
 
             try:
-                convert_ndpa_to_lmd_core(file, output)
+                warnings = convert_ndpa_to_lmd_core(file, output)
+                for warning in warnings:
+                    self.after(0, self._log, f"  warning: {warning}", "warn")
                 ok += 1
                 self.after(0, self._log, f"  done", "ok")
             except (ValueError, FileNotFoundError, IsADirectoryError) as e:

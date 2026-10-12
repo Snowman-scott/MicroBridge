@@ -1,10 +1,15 @@
+import re
 from pathlib import Path
 from xml.dom import minidom
 from xml.dom.minidom import Text
 
 import pytest
 
-from MicroBridge.Core.core import convert_ndpa_to_lmd_core, derive_output_filename
+from MicroBridge.Core.core import (
+    NoReferencePointError,
+    convert_ndpa_to_lmd_core,
+    derive_output_filename,
+)
 
 TEST_DATA_DIR = Path(__file__).parent / "test_data" / "ndp"
 
@@ -16,10 +21,17 @@ def write_input(tmp_path: Path, name: str, xml: str) -> str:
 
 
 def convert(tmp_path: Path, input_name: str, xml: str) -> minidom.Document:
+    dom, _ = convert_with_warnings(tmp_path, input_name, xml)
+    return dom
+
+
+def convert_with_warnings(
+    tmp_path: Path, input_name: str, xml: str
+) -> tuple[minidom.Document, list[str]]:
     in_path = write_input(tmp_path, input_name, xml)
     out_path = tmp_path / f"{Path(input_name).stem}_LMD.xml"
-    convert_ndpa_to_lmd_core(in_path, str(out_path))
-    return minidom.parse(str(out_path))
+    warnings = convert_ndpa_to_lmd_core(in_path, str(out_path))
+    return minidom.parse(str(out_path)), warnings
 
 
 def text(dom: minidom.Document, tag: str) -> str | None:
@@ -321,3 +333,262 @@ def test_converts_ruler_sample_from_test_data(tmp_path):
     convert_ndpa_to_lmd_core(input_file, output_file)
     dom = minidom.parse(output_file)
     assert text(dom, "ShapeCount") == "2"
+
+
+# ── named reference points (ref_N) ───────────────────────
+
+def ref(num: int, x: int, y: int, shape: str = "circle") -> str:
+    if shape == "circle":
+        body = f"<x>{x}</x><y>{y}</y>"
+    else:
+        body = f"<pointlist><point><x>{x}</x><y>{y}</y></point></pointlist>"
+    return (
+        f'<ndpviewstate><title>ref_{num}</title>'
+        f'<annotation type="{shape}">{body}</annotation></ndpviewstate>'
+    )
+
+
+def shape_region(title: str, x: int, y: int) -> str:
+    return (
+        f"<ndpviewstate><title>{title}</title>"
+        f'<annotation type="freehand"><pointlist>'
+        f"<point><x>{x}</x><y>{y}</y></point>"
+        f"</pointlist></annotation></ndpviewstate>"
+    )
+
+
+def test_ref_points_at_end_of_file_are_found(tmp_path):
+    dom, warnings = convert_with_warnings(tmp_path, "tail_refs.ndpa", f"""<?xml version="1.0"?>
+<annotations>
+  {shape_region("1", 300000000, 400000000)}
+  {shape_region("2", 500000000, 600000000)}
+  {ref(1, 100000000, 200000000)}
+  {ref(2, 150000000, 250000000)}
+  {ref(3, 200000000, 300000000)}
+</annotations>""")
+    assert warnings == []
+    assert text(dom, "X_CalibrationPoint_1") == "100000"
+    assert text(dom, "Y_CalibrationPoint_1") == "200000"
+    assert text(dom, "X_CalibrationPoint_3") == "200000"
+    assert text(dom, "ShapeCount") == "2"
+
+
+def test_ref_points_scattered_through_file_are_found(tmp_path):
+    dom, warnings = convert_with_warnings(tmp_path, "scattered.ndpa", f"""<?xml version="1.0"?>
+<annotations>
+  {shape_region("1", 300000000, 400000000)}
+  {ref(2, 150000000, 250000000)}
+  {shape_region("2", 500000000, 600000000)}
+  {ref(1, 100000000, 200000000)}
+  {shape_region("3", 700000000, 800000000)}
+  {ref(3, 200000000, 300000000)}
+</annotations>""")
+    assert warnings == []
+    assert text(dom, "X_CalibrationPoint_1") == "100000"
+    assert text(dom, "X_CalibrationPoint_2") == "150000"
+    assert text(dom, "X_CalibrationPoint_3") == "200000"
+    assert text(dom, "ShapeCount") == "3"
+
+
+def test_ref_numbers_win_over_document_order(tmp_path):
+    """ref_3 appearing first must still land in CalibrationPoint_3."""
+    dom = convert(tmp_path, "reversed.ndpa", f"""<?xml version="1.0"?>
+<annotations>
+  {ref(3, 200000000, 300000000)}
+  {ref(2, 150000000, 250000000)}
+  {ref(1, 100000000, 200000000)}
+</annotations>""")
+    assert text(dom, "X_CalibrationPoint_1") == "100000"
+    assert text(dom, "X_CalibrationPoint_2") == "150000"
+    assert text(dom, "X_CalibrationPoint_3") == "200000"
+
+
+def test_ref_regions_are_not_also_emitted_as_shapes(tmp_path):
+    """A freehand ref_N has a pointlist, so it must be excluded by index."""
+    dom, warnings = convert_with_warnings(tmp_path, "no_double.ndpa", f"""<?xml version="1.0"?>
+<annotations>
+  {ref(1, 100000000, 200000000, shape="freehand")}
+  {ref(2, 150000000, 250000000, shape="freehand")}
+  {ref(3, 200000000, 300000000, shape="freehand")}
+  {shape_region("1", 300000000, 400000000)}
+</annotations>""")
+    assert text(dom, "ShapeCount") == "1"
+    assert text(dom, "X_1") == "300000"
+    assert len(warnings) == 3
+
+
+@pytest.mark.parametrize("title", ["ref_1", "REF_1", "Ref_1", "ref 1", "ref-1", "ref1", " ref_1 "])
+def test_ref_title_separator_and_case_variants_accepted(tmp_path, title):
+    dom = convert(tmp_path, "variants.ndpa", f"""<?xml version="1.0"?>
+<annotations>
+  <ndpviewstate><title>{title}</title>
+    <annotation type="circle"><x>100000000</x><y>200000000</y></annotation></ndpviewstate>
+  {ref(2, 150000000, 250000000)}
+  {ref(3, 200000000, 300000000)}
+</annotations>""")
+    assert text(dom, "X_CalibrationPoint_1") == "100000"
+
+
+@pytest.mark.parametrize("title", ["reference_1", "ref_4", "ref_0", "refs_1", "ROI_1", "1"])
+def test_non_ref_titles_do_not_count_as_named_refs(tmp_path, title):
+    """Anything outside the convention leaves the file on the positional fallback."""
+    dom, warnings = convert_with_warnings(tmp_path, "notref.ndpa", f"""<?xml version="1.0"?>
+<annotations>
+  <ndpviewstate><title>{title}</title>
+    <annotation type="circle"><x>100000000</x><y>200000000</y></annotation></ndpviewstate>
+  <ndpviewstate><title>b</title>
+    <annotation type="circle"><x>150000000</x><y>250000000</y></annotation></ndpviewstate>
+  <ndpviewstate><title>c</title>
+    <annotation type="circle"><x>200000000</x><y>300000000</y></annotation></ndpviewstate>
+</annotations>""")
+    assert text(dom, "X_CalibrationPoint_1") == "100000"
+    assert any("first three regions" in w for w in warnings)
+
+
+# ── named but not a circle → accept and warn ─────────────
+
+def test_named_ref_that_is_not_a_circle_is_accepted_with_warning(tmp_path):
+    dom, warnings = convert_with_warnings(tmp_path, "notcircle.ndpa", f"""<?xml version="1.0"?>
+<annotations>
+  {ref(1, 100000000, 200000000, shape="freehand")}
+  {ref(2, 150000000, 250000000)}
+  {ref(3, 200000000, 300000000)}
+</annotations>""")
+    assert text(dom, "X_CalibrationPoint_1") == "100000"
+    assert text(dom, "Y_CalibrationPoint_1") == "200000"
+    assert len(warnings) == 1
+    assert "ref_1" in warnings[0]
+    assert "circle" in warnings[0]
+
+
+def test_all_three_refs_non_circle_warns_three_times(tmp_path):
+    _, warnings = convert_with_warnings(tmp_path, "nocircles.ndpa", f"""<?xml version="1.0"?>
+<annotations>
+  {ref(1, 100000000, 200000000, shape="freehand")}
+  {ref(2, 150000000, 250000000, shape="freehand")}
+  {ref(3, 200000000, 300000000, shape="freehand")}
+</annotations>""")
+    assert len(warnings) == 3
+    assert {"ref_1", "ref_2", "ref_3"} == {w.split()[0] for w in warnings}
+
+
+def test_circle_ref_produces_no_warning(tmp_path):
+    _, warnings = convert_with_warnings(tmp_path, "circles.ndpa", f"""<?xml version="1.0"?>
+<annotations>
+  {ref(1, 100000000, 200000000)}
+  {ref(2, 150000000, 250000000)}
+  {ref(3, 200000000, 300000000)}
+</annotations>""")
+    assert warnings == []
+
+
+# ── no usable reference points → error ───────────────────
+
+@pytest.mark.parametrize("present,missing", [((1, 2), "ref_3"), ((1, 3), "ref_2"), ((2, 3), "ref_1"), ((1,), "ref_2")])
+def test_partial_named_refs_raise(tmp_path, present, missing):
+    """Naming any ref_N commits the file to the convention — no silent fallback."""
+    regions = "\n  ".join(ref(n, 100000000 * n, 200000000 * n) for n in present)
+    in_path = write_input(tmp_path, "partial.ndpa", f"""<?xml version="1.0"?>
+<annotations>
+  {regions}
+  {shape_region("1", 300000000, 400000000)}
+</annotations>""")
+    with pytest.raises(NoReferencePointError) as excinfo:
+        convert_ndpa_to_lmd_core(in_path, str(tmp_path / "partial_LMD.xml"))
+    assert missing in str(excinfo.value)
+
+
+def test_duplicate_ref_number_raises(tmp_path):
+    in_path = write_input(tmp_path, "dupe.ndpa", f"""<?xml version="1.0"?>
+<annotations>
+  {ref(1, 100000000, 200000000)}
+  {ref(1, 110000000, 210000000)}
+  {ref(2, 150000000, 250000000)}
+  {ref(3, 200000000, 300000000)}
+</annotations>""")
+    with pytest.raises(NoReferencePointError) as excinfo:
+        convert_ndpa_to_lmd_core(in_path, str(tmp_path / "dupe_LMD.xml"))
+    assert "ref_1" in str(excinfo.value)
+
+
+def test_named_ref_with_no_coordinates_raises(tmp_path):
+    in_path = write_input(tmp_path, "emptyref.ndpa", f"""<?xml version="1.0"?>
+<annotations>
+  <ndpviewstate><title>ref_1</title></ndpviewstate>
+  {ref(2, 150000000, 250000000)}
+  {ref(3, 200000000, 300000000)}
+</annotations>""")
+    with pytest.raises(NoReferencePointError) as excinfo:
+        convert_ndpa_to_lmd_core(in_path, str(tmp_path / "emptyref_LMD.xml"))
+    assert "ref_1" in str(excinfo.value)
+
+
+def test_file_with_no_regions_at_all_raises(tmp_path):
+    in_path = write_input(tmp_path, "empty.ndpa", """<?xml version="1.0"?>
+<annotations>
+</annotations>""")
+    with pytest.raises(NoReferencePointError):
+        convert_ndpa_to_lmd_core(in_path, str(tmp_path / "empty_LMD.xml"))
+
+
+def test_no_reference_point_error_is_a_value_error():
+    """The CLI and GUI only catch ValueError, so the new error must stay inside it."""
+    assert issubclass(NoReferencePointError, ValueError)
+
+
+# ── legacy (pre-MicroBridge) files keep working ──────────
+
+def test_legacy_unnamed_file_falls_back_to_first_three_regions(tmp_path):
+    dom, warnings = convert_with_warnings(tmp_path, "legacy.ndpa", """<?xml version="1.0"?>
+<annotations>
+  <ndpviewstate><annotation type="circle"><x>100000000</x><y>200000000</y></annotation></ndpviewstate>
+  <ndpviewstate><annotation type="circle"><x>150000000</x><y>250000000</y></annotation></ndpviewstate>
+  <ndpviewstate><annotation type="circle"><x>200000000</x><y>300000000</y></annotation></ndpviewstate>
+  <ndpviewstate><annotation type="freehand">
+    <pointlist><point><x>300000000</x><y>400000000</y></point></pointlist>
+  </annotation></ndpviewstate>
+</annotations>""")
+    assert text(dom, "X_CalibrationPoint_1") == "100000"
+    assert text(dom, "ShapeCount") == "1"
+    assert len(warnings) == 1
+    assert "ref_1" in warnings[0]
+
+
+def test_legacy_reference_point_titles_still_use_the_fallback(tmp_path):
+    """Reference_Point_N predates the convention and is not a ref_N match."""
+    dom, warnings = convert_with_warnings(tmp_path, "oldnames.ndpa", """<?xml version="1.0"?>
+<annotations>
+  <ndpviewstate><title>Reference_Point_1</title>
+    <annotation type="circle"><x>100000000</x><y>200000000</y></annotation></ndpviewstate>
+  <ndpviewstate><title>Reference_Point_2</title>
+    <annotation type="circle"><x>150000000</x><y>250000000</y></annotation></ndpviewstate>
+  <ndpviewstate><title>Reference_point_3</title>
+    <annotation type="circle"><x>200000000</x><y>300000000</y></annotation></ndpviewstate>
+</annotations>""")
+    assert text(dom, "X_CalibrationPoint_1") == "100000"
+    assert warnings != []
+
+
+# ── the real 1_PD sample, refs moved to the end ──────────
+
+def test_pd_sample_has_refs_at_end_and_matches_expected_output(tmp_path):
+    """The refs sit last in this file; output must equal the committed reference XML."""
+    input_file = str(TEST_DATA_DIR / "1_PD43850x_Tg_Ab.ndpi.ndpa")
+    output_file = str(tmp_path / "1_PD43850x_Tg_Ab.ndpi_LMD.xml")
+    warnings = convert_ndpa_to_lmd_core(input_file, output_file)
+
+    assert warnings == []
+    expected = (TEST_DATA_DIR / "1_PD43850x_Tg_Ab.ndpi_LMD.xml").read_text(encoding="utf-8")
+    assert Path(output_file).read_text(encoding="utf-8") == expected
+
+
+def test_pd_sample_ndpviewstate_ids_are_sequential():
+    source = (TEST_DATA_DIR / "1_PD43850x_Tg_Ab.ndpi.ndpa").read_text(encoding="utf-8")
+    ids = [int(i) for i in re.findall(r'<ndpviewstate id="(\d+)">', source)]
+    assert ids == list(range(1, len(ids) + 1))
+
+
+def test_pd_sample_ref_titles_are_the_last_three_regions():
+    source = (TEST_DATA_DIR / "1_PD43850x_Tg_Ab.ndpi.ndpa").read_text(encoding="utf-8")
+    titles = re.findall(r"<title>([^<]*)</title>", source)
+    assert titles[-3:] == ["ref_1", "ref_2", "ref_3"]
